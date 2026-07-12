@@ -1,0 +1,57 @@
+# LandMap - end-to-end test stack.
+# Builds the full production-like app and runs Playwright against it.
+#   make test-e2e
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: landmap
+      POSTGRES_PASSWORD: landmap
+      POSTGRES_DB: landmap
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U landmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    environment:
+      POSTGRES_HOST: db
+      BACKEND_CORS_ORIGINS: http://proxy,http://localhost
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+      args:
+        VITE_API_BASE_URL: /api
+    depends_on:
+      - backend
+
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ":80"
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - frontend
+      - backend
+
+  e2e:
+    build:
+      context: ./tests/e2e
+    environment:
+      E2E_BASE_URL: http://proxy
+    volumes:
+      - ./tests/e2e/tests:/e2e/tests
+      - ./tests/e2e/playwright.config.ts:/e2e/playwright.config.ts
+    depends_on:
+      - proxy

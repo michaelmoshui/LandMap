@@ -1,0 +1,68 @@
+# LandMap - production-like, self-hostable stack.
+#
+# Runs with zero config thanks to the defaults below. Create a .env only to
+# override (e.g. set DOMAIN for public HTTPS). Start with:  make up
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-landmap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-landmap}
+      POSTGRES_DB: ${POSTGRES_DB:-landmap}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-landmap}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      target: prod
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-landmap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-landmap}
+      POSTGRES_DB: ${POSTGRES_DB:-landmap}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost,http://localhost:5173,http://localhost:8080}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      target: prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  proxy:
+    image: caddy:2-alpine
+    environment:
+      DOMAIN: ${DOMAIN:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,44 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Node
+node_modules/
+dist/
+.vite/
+*.local
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# Testing
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Docker / data volumes
+data/
+pgdata/
+caddy_data/
+caddy_config/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

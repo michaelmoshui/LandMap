@@ -1,0 +1,21 @@
+---
+description: Core conventions for the LandMap project
+alwaysApply: true
+---
+
+# LandMap project rules
+
+- Read `AGENTS.md` and `SKILL.md` before non-trivial changes.
+- Everything is containerized. Use `make` targets (wrappers over
+  `docker compose`); do not assume host-installed Python/Node.
+- Stack is intentionally lightweight and self-hostable: React + Vite + MapLibre
+  (frontend), FastAPI + PostGIS (backend), Caddy (proxy). No paid map providers
+  or API tokens.
+- Never commit secrets. Only `.env.example` is tracked; the stack must run with
+  compose defaults and no `.env`.
+- The API contract lives in `backend/app/schemas/`. Changing it requires
+  updating the frontend client and e2e tests in the same change.
+- Every behavior change needs tests: backend -> `backend/tests/unit/`,
+  frontend -> `frontend/tests/unit/`, cross-stack flows -> `tests/e2e/`.
+- Run `make lint` and `make test` before considering work done.
+- Pin dependency versions; do not float to "latest".
