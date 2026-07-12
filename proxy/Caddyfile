@@ -1,0 +1,19 @@
+# LandMap reverse proxy.
+#
+# {$DOMAIN} defaults to ":80" (plain HTTP, for local use). Set DOMAIN to a real
+# hostname (e.g. landmap.example.com) in .env and Caddy will automatically
+# obtain and renew HTTPS certificates via Let's Encrypt.
+
+{$DOMAIN:80} {
+	encode gzip
+
+	# API traffic -> backend
+	handle /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Everything else -> frontend (nginx serving the built SPA)
+	handle {
+		reverse_proxy frontend:80
+	}
+}

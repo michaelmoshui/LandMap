@@ -1,0 +1,18 @@
+[project]
+name = "landmap-backend"
+version = "0.1.0"
+description = "LandMap backend API - land information for the Greater Vancouver Area"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]

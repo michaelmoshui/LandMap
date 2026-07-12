@@ -1,0 +1,19 @@
+# LandMap - unit test runners (no running app required).
+#   make test-backend   ->  docker compose -f docker-compose.test.yml run --rm backend-tests
+#   make test-frontend  ->  docker compose -f docker-compose.test.yml run --rm frontend-tests
+
+services:
+  backend-tests:
+    build:
+      context: ./backend
+      target: test
+    command: pytest
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+
+  frontend-tests:
+    build:
+      context: ./frontend
+      target: test
+    command: npm run test

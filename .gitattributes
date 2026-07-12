@@ -1,0 +1,9 @@
+# Normalize all text files to UTF-8 + LF in the repo.
+* text=auto eol=lf
+
+# Explicitly binary assets (add more as needed).
+*.png binary
+*.jpg binary
+*.gif binary
+*.webp binary
+*.ico binary
