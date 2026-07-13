@@ -97,4 +97,4 @@ LandMap/
 - [ ] Ingest real datasets into PostGIS (housing, demographics).
 - [ ] Government-plan layers: road construction, SkyTrain, high-rises.
 - [ ] Time slider for "planned" layers (what's coming and when).
-- [ ] Self-hosted vector tiles to remove the OpenStreetMap raster dependency.
+- [ ] Self-hosted vector tiles to remove the OpenFreeMap dependency.

@@ -4,8 +4,9 @@ import { useEffect, useRef } from "react";
 
 import { fetchLayerFeatures } from "../api/client";
 import type { LayerMeta } from "../api/types";
+import { BASE_MAP_STYLE } from "../map/baseMapStyle";
 import { buildMapLayers, sourceIdFor } from "../map/buildLayers";
-import { DEFAULT_ZOOM, OSM_STYLE, VANCOUVER_CENTER } from "../map/layerStyles";
+import { DEFAULT_ZOOM, VANCOUVER_CENTER } from "../map/layerStyles";
 
 interface MapViewProps {
   layers: LayerMeta[];
@@ -21,7 +22,7 @@ export default function MapView({ layers, active }: MapViewProps) {
     if (!containerRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: OSM_STYLE,
+      style: BASE_MAP_STYLE,
       center: VANCOUVER_CENTER,
       zoom: DEFAULT_ZOOM,
     });
