@@ -37,6 +37,9 @@ pgdata/
 caddy_data/
 caddy_config/
 
+# Claude Code (personal/local overrides; shared config is committed)
+.claude/settings.local.json
+
 # Editor / OS
 .DS_Store
 Thumbs.db
