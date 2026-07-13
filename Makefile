@@ -15,6 +15,7 @@ help: ## Show this help
 	@echo   make dev           Start dev stack with hot reload at http://localhost:5173
 	@echo   make down          Stop the stack
 	@echo   make down-dev       Stop the dev stack
+	@echo   make stop-host     Kill stray host dev servers holding the dev ports
 	@echo   make logs          Tail logs for the running stack
 	@echo   make build         Build all images
 	@echo   make rebuild       Rebuild all images with no cache
@@ -33,7 +34,7 @@ up: ## Build and start the full production-like stack
 	@echo LandMap is up. Open http://localhost
 
 .PHONY: dev
-dev: ## Start the dev stack with hot reload
+dev: stop-host ## Start the dev stack with hot reload
 	$(COMPOSE_DEV) up --build
 
 .PHONY: down
@@ -41,8 +42,32 @@ down: ## Stop the production-like stack
 	$(COMPOSE) down
 
 .PHONY: down-dev
-down-dev: ## Stop the dev stack
+down-dev: stop-host ## Stop the dev stack (containers + stray host dev servers)
 	$(COMPOSE_DEV) down
+
+# `make dev` runs the frontend/backend in containers, but earlier sessions
+# sometimes ran Vite/uvicorn directly on the host as a fallback. Those host
+# processes are NOT stopped by `docker compose down`, so they keep holding
+# the dev ports and block the next `make dev`. This finds whatever HOST
+# process is listening on those ports and stops it, but only if it is a
+# node/python dev server - so it never touches the containerized stack's
+# root-owned docker-proxy, nor make/pgrep itself.
+DEV_PORTS := 5173 8000
+.PHONY: stop-host
+stop-host: ## Kill stray host dev servers (vite/uvicorn) holding the dev ports
+	@killed=""; \
+	for port in $(DEV_PORTS); do \
+	  for pid in $$(ss -ltnpH "sport = :$$port" 2>/dev/null \
+	                | grep -oE 'pid=[0-9]+' | cut -d= -f2 | sort -u); do \
+	    comm=$$(ps -o comm= -p $$pid 2>/dev/null); \
+	    case "$$comm" in \
+	      node|node.js|python|python3|uvicorn|vite) \
+	        echo "Stopping host dev server on :$$port (pid $$pid, $$comm)"; \
+	        kill $$pid 2>/dev/null || true; killed=1;; \
+	    esac; \
+	  done; \
+	done; \
+	[ -n "$$killed" ] || echo "No stray host dev servers found."
 
 .PHONY: logs
 logs: ## Tail logs
@@ -85,7 +110,7 @@ fmt: ## Auto-format backend (ruff) and frontend
 
 # ---- Cleanup ------------------------------------------------------------
 .PHONY: clean
-clean: ## Stop all stacks and remove volumes
+clean: stop-host ## Stop all stacks and remove volumes
 	-$(COMPOSE) down -v
 	-$(COMPOSE_DEV) down -v
 	-$(COMPOSE_E2E) down -v
