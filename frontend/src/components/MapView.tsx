@@ -3,19 +3,22 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef } from "react";
 
 import { fetchLayerFeatures } from "../api/client";
-import type { LayerMeta } from "../api/types";
+import type { LayerMeta, RegionMeta } from "../api/types";
 import { buildMapLayers, sourceIdFor } from "../map/buildLayers";
 import { DEFAULT_ZOOM, OSM_STYLE, VANCOUVER_CENTER } from "../map/layerStyles";
 
 interface MapViewProps {
   layers: LayerMeta[];
   active: Set<string>;
+  region?: RegionMeta | null;
 }
 
-export default function MapView({ layers, active }: MapViewProps) {
+export default function MapView({ layers, active, region }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const loadedRef = useRef(false);
+  // Style-layer ids we have added, so switching regions can remove stale ones.
+  const addedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -34,39 +37,55 @@ export default function MapView({ layers, active }: MapViewProps) {
       map.remove();
       mapRef.current = null;
       loadedRef.current = false;
+      addedRef.current = new Set();
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !region) return;
+    map.flyTo({ center: region.center, zoom: region.zoom });
+  }, [region?.id]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     const sync = async () => {
+      const desired = new Set<string>();
       for (const layer of layers) {
-        const sourceId = sourceIdFor(layer.id);
-        const specs = buildMapLayers(layer.id, layer.category);
-        const shouldShow = active.has(layer.id);
+        if (!active.has(layer.id)) continue;
+        for (const spec of buildMapLayers(layer.id, layer.category)) {
+          desired.add(spec.id);
+        }
+      }
 
-        if (shouldShow) {
-          if (!map.getSource(sourceId)) {
-            try {
-              const data = await fetchLayerFeatures(layer.id);
-              if (!map.getSource(sourceId)) {
-                map.addSource(sourceId, { type: "geojson", data: data as never });
-              }
-            } catch {
-              continue;
+      // Remove layers that are toggled off or belong to another region.
+      for (const id of [...addedRef.current]) {
+        if (!desired.has(id)) {
+          if (map.getLayer(id)) map.removeLayer(id);
+          addedRef.current.delete(id);
+        }
+      }
+
+      for (const layer of layers) {
+        if (!active.has(layer.id)) continue;
+        const sourceId = sourceIdFor(layer.id);
+        if (!map.getSource(sourceId)) {
+          try {
+            const data = await fetchLayerFeatures(layer.id);
+            if (!map.getSource(sourceId)) {
+              map.addSource(sourceId, { type: "geojson", data: data as never });
             }
+          } catch {
+            continue;
           }
-          for (const spec of specs) {
-            if (!map.getLayer(spec.id)) {
-              map.addLayer(spec as never);
-            }
+        }
+        for (const spec of buildMapLayers(layer.id, layer.category)) {
+          if (!map.getLayer(spec.id)) {
+            map.addLayer(spec as never);
           }
-        } else {
-          for (const spec of specs) {
-            if (map.getLayer(spec.id)) map.removeLayer(spec.id);
-          }
+          addedRef.current.add(spec.id);
         }
       }
     };

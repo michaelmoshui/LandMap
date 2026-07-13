@@ -35,7 +35,7 @@ This document aggregates verified open data catalogs, interactive GIS mapping ut
     *   **Endpoint**: [City of Vancouver Open Data Portal Catalog](https://vancouver.ca)
 *   **City of Vancouver Issued Building Permits Map**
     *   **Description**: Mapping catalog isolating parcel-level structural adjustments, updates, and historic real estate developments.
-    *   **Endpoint**: [City of Vancouver Issued Permits Map](https://vancouver.cadataset/issued-building-permits/map/)
+    *   **Endpoint**: [City of Vancouver Issued Permits Map](https://opendata.vancouver.ca/explore/dataset/issued-building-permits/map/)
 *   **Shape Your City Vancouver**
     *   **Description**: Dynamic public consultation mapping dashboard isolating active rezoning requests and major structural development permits.
     *   **Endpoint**: [Shape Your City Vancouver Development](https://shapeyourcity.ca)

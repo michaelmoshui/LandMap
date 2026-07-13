@@ -7,6 +7,23 @@ export interface LayerMeta {
   title: string;
   description: string;
   category: LayerCategory;
+  region: string;
+}
+
+export interface RegionMeta {
+  id: string;
+  title: string;
+  center: [number, number]; // [lng, lat]
+  zoom: number;
+}
+
+export interface DataSource {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  region: string;
+  group: string;
 }
 
 export interface GeoFeature {

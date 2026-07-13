@@ -1,9 +1,14 @@
 # LandMap
 
 An open, self-hostable web map of land information for the **Greater Vancouver
-Area** - housing prices and demographics today, with forward-looking layers
-(road construction, SkyTrain expansion, new high-rises) sourced from government
-plans as the project grows.
+Area** and the **Greater Toronto Area** - housing prices and demographics
+today, with forward-looking layers (road construction, transit expansion, new
+high-rises) sourced from government plans as the project grows.
+
+Regions and their open-data portals are cataloged in
+[`SOURCES.md`](./SOURCES.md); the backend parses it at request time (it is
+bind-mounted into the container), so editing that file updates `/api/regions`
+and `/api/sources` without a rebuild.
 
 ## Stack
 

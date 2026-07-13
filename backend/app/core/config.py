@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     log_level: str = "info"
 
+    # Path to the SOURCES.md catalog of regions/data portals. The compose files
+    # bind-mount the repo's SOURCES.md to /app/SOURCES.md (the workdir).
+    sources_path: str = "SOURCES.md"
+
     # CORS: comma-separated origins, e.g. "http://localhost,http://localhost:5173".
     # NoDecode stops pydantic-settings from JSON-parsing the env value so our
     # validator below can split the plain comma-separated string.

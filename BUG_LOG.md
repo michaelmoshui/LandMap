@@ -10,6 +10,86 @@ Each entry records:
 
 ---
 
+## BUG-009: `make dev` fails with `address already in use` on :5173 (host Vite survives `make down`)
+
+- **Symptoms**
+  - `make dev` aborts with
+    `failed to bind host port 0.0.0.0:5173/tcp: address already in use`.
+  - `make down` does **not** fix it; `ss -ltnp | grep :5173` shows a host
+    `node .../node_modules/.bin/vite` process (not a container).
+- **Root cause**
+  - An earlier session ran Vite directly on the host as a fallback (see
+    BUG-007). `make down` / `down-dev` call `docker compose down`, which only
+    stops containers, so the host Vite keeps holding 5173 and blocks the
+    containerized frontend from binding.
+- **Fix**
+  - `make stop-host` kills host dev servers listening on the dev ports
+    (5173/8000). It only kills node/python listeners, so it never touches the
+    containerized stack's root-owned `docker-proxy`. It is now a prerequisite
+    of `make dev`, `make down-dev`, and `make clean`, so re-running `make dev`
+    self-heals.
+  - Rule of thumb: if `make down` doesn't free a port, it's a host process -
+    `ss -ltnp | grep :<port>` then `make stop-host`.
+  - Note: the cleanup must match by *port listener*, not `pgrep -f` on the
+    repo path - a `.*` command-line pattern greedily self-matches the `make`/
+    shell process running it and can kill your own shell.
+
+---
+
+## BUG-008: Root-owned empty `frontend/node_modules` blocks host `npm install`
+
+- **Symptoms**
+  - `npm ci` / `npm install` in `frontend/` failed with
+    `EACCES: mkdir '/home/alex/landmap/frontend/node_modules/@adobe'`.
+  - `frontend/node_modules` existed but was empty and owned by `root:root`.
+- **Root cause**
+  - A previous Docker run created the directory as root on the host (compose
+    named-volume mount point). npm running as the regular user cannot write
+    into a root-owned directory.
+- **Fix**
+  - The directory is empty, so the user (who owns the parent) can remove it:
+    `rmdir frontend/node_modules`, then reinstall. If non-empty, it needs
+    `sudo rm -rf`.
+
+---
+
+## BUG-007: Docker commands fail with `permission denied` on the docker socket (Linux)
+
+- **Symptoms**
+  - Every `make`/`docker compose` target failed with
+    `permission denied while trying to connect to the docker API at
+    unix:///var/run/docker.sock`.
+- **Root cause**
+  - `/var/run/docker.sock` is `root:docker` and the login user is not in the
+    `docker` group, so the daemon is running but unreachable without root.
+    (Distinct from BUG-005, where the engine itself was not running.)
+- **Fix**
+  - `sudo usermod -aG docker $USER`, then log out/in (or `newgrp docker`).
+  - Until then, tests can be run on the host as a fallback: a venv with
+    `backend/requirements-dev.txt` for pytest/ruff, `npm ci` in `frontend/`
+    for Vitest/eslint - but `make test` in Docker remains the authoritative
+    gate.
+
+---
+
+## BUG-006: ruff flags valid imports with I001 (first-party `app` not detected)
+
+- **Symptoms**
+  - `ruff check .` reported `I001 Import block is un-sorted or un-formatted`
+    on files whose imports were correctly grouped (stdlib / third-party /
+    `app.*`), including files that had previously passed lint.
+- **Root cause**
+  - `backend/pyproject.toml` had `src = ["app", "tests"]`. ruff resolves those
+    relative to the project root, so it looked for first-party packages
+    *inside* `backend/app/` and `backend/tests/`. The `app` package actually
+    lives *at* the root, so `app` was classified third-party and its imports
+    were expected in the third-party block.
+- **Fix**
+  - Set `src = ["."]` so ruff finds the `app` package and treats it as
+    first-party. No import blocks needed reordering.
+
+---
+
 ## BUG-001: Files saved as UTF-16 break Docker/YAML/Python builds
 
 - **Symptoms**

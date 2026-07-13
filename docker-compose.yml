@@ -31,6 +31,9 @@ services:
       POSTGRES_PORT: 5432
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost,http://localhost:5173,http://localhost:8080}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      # Region/data-source catalog; re-read on each request, so edits apply live.
+      - ./SOURCES.md:/app/SOURCES.md:ro
     depends_on:
       db:
         condition: service_healthy

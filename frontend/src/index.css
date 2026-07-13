@@ -79,6 +79,45 @@ body,
   background: #f1f5f9;
 }
 
+.region-select {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.sources {
+  margin-top: 12px;
+}
+
+.sources summary {
+  cursor: pointer;
+  margin: 0;
+}
+
+.source-list {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+
+.source-list li {
+  margin-bottom: 4px;
+}
+
+.source-list a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.source-list a:hover {
+  text-decoration: underline;
+}
+
 .status {
   margin-top: 12px;
   font-size: 12px;

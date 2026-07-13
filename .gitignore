@@ -20,6 +20,7 @@ coverage.xml
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 *.local
 npm-debug.log*
 pnpm-debug.log*

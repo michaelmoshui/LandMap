@@ -22,6 +22,8 @@ services:
     environment:
       POSTGRES_HOST: db
       BACKEND_CORS_ORIGINS: http://proxy,http://localhost
+    volumes:
+      - ./SOURCES.md:/app/SOURCES.md:ro
     depends_on:
       db:
         condition: service_healthy

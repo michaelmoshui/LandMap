@@ -5,14 +5,26 @@ file fully before making changes. It is the source of truth for how to work here
 
 ## What LandMap is
 
-A web map of land information for the **Greater Vancouver Area**. Planned layers:
+A web map of land information for the **Greater Vancouver Area (`gva`)** and
+the **Greater Toronto Area (`gta`)**. Planned layers:
 
 - Baseline: housing prices, demographics.
-- Forward-looking (from government sources): road construction, SkyTrain
-  expansion, upcoming high-rise developments - surfaced *before* work begins.
+- Forward-looking (from government sources): road construction, transit
+  expansion (SkyTrain, Ontario Line), upcoming high-rise developments -
+  surfaced *before* work begins.
+
+Regions and their open-data portals live in **`SOURCES.md`**. The backend
+parses it at request time (`app/services/sources.py`; the file is bind-mounted
+into the backend container) and serves it via `GET /api/regions` and
+`GET /api/sources?region=`. Layers carry a `region` field and can be filtered
+with `GET /api/layers?region=`. To add a region or portal, edit SOURCES.md - a
+`## <Region Name> (ACRONYM)` section plus `* **Name**` bullets with nested
+`**Description**`/`**Endpoint**` fields is all the parser needs (add a
+viewport in `_REGION_VIEWPORTS` for a new region).
 
 The current codebase is a **scaffold**: the plumbing (map, API, DB, tests,
-containers) is in place with sample data. Real data ingestion comes later.
+containers) is in place with sample data. Real ingestion from the SOURCES.md
+portals comes later.
 
 ## Architecture (keep this mental model)
 
