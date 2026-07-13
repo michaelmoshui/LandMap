@@ -11,17 +11,17 @@ COMPOSE_E2E  := docker compose -f docker-compose.e2e.yml
 .PHONY: help
 help: ## Show this help
 	@echo LandMap - available commands:
-	@echo   make up            Build and start the full stack (http://localhost)
-	@echo   make dev           Start dev stack with hot reload (http://localhost:5173)
+	@echo   make up            Build and start the full stack at http://localhost
+	@echo   make dev           Start dev stack with hot reload at http://localhost:5173
 	@echo   make down          Stop the stack
 	@echo   make down-dev       Stop the dev stack
 	@echo   make logs          Tail logs for the running stack
 	@echo   make build         Build all images
 	@echo   make rebuild       Rebuild all images with no cache
-	@echo   make test          Run all tests (unit + e2e)
-	@echo   make test-backend  Run backend unit tests (pytest)
-	@echo   make test-frontend Run frontend unit tests (Vitest)
-	@echo   make test-e2e      Run end-to-end tests (Playwright)
+	@echo   make test          Run all tests - unit and e2e
+	@echo   make test-backend  Run backend unit tests with pytest
+	@echo   make test-frontend Run frontend unit tests with Vitest
+	@echo   make test-e2e      Run end-to-end tests with Playwright
 	@echo   make lint          Lint backend and frontend
 	@echo   make fmt           Auto-format backend and frontend
 	@echo   make clean         Stop everything and remove volumes
