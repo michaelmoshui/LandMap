@@ -7,7 +7,9 @@ requires-python = ">=3.12"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["app", "tests"]
+# Project root holds the top-level `app` package; this keeps isort treating
+# `app` imports as first-party.
+src = ["."]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "W"]

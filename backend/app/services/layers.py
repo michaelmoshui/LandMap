@@ -124,7 +124,9 @@ def _sample_new_highrises() -> FeatureCollection:
     return FeatureCollection(
         features=[
             _point(-123.1180, 49.2830, name="Tower A (sample)", storeys=48, status="approved"),
-            _point(-122.9990, 49.2495, name="Metrotown Tower (sample)", storeys=60, status="proposed"),
+            _point(
+                -122.9990, 49.2495, name="Metrotown Tower (sample)", storeys=60, status="proposed"
+            ),
         ]
     )
 

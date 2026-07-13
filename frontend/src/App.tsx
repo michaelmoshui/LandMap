@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 
 import { fetchLayers } from "./api/client";
-import type { LayerMeta } from "./api/types";
+import type { BoundarySummary, LayerMeta } from "./api/types";
 import LayerPanel from "./components/LayerPanel";
 import MapView from "./components/MapView";
+import SearchPanel from "./components/SearchPanel";
+import { nextSelectionColor, type SelectedBoundary } from "./map/selection";
 
 export default function App() {
   const [layers, setLayers] = useState<LayerMeta[]>([]);
   const [active, setActive] = useState<Set<string>>(new Set());
+  const [selections, setSelections] = useState<SelectedBoundary[]>([]);
   const [status, setStatus] = useState<string>("Loading layers...");
 
   useEffect(() => {
@@ -28,10 +31,23 @@ export default function App() {
     });
   };
 
+  const selectBoundary = (boundary: BoundarySummary) => {
+    setSelections((prev) => {
+      if (prev.some((s) => s.id === boundary.id)) return prev;
+      const color = nextSelectionColor(prev.map((s) => s.color));
+      return [...prev, { ...boundary, color }];
+    });
+  };
+
+  const removeBoundary = (boundaryId: string) => {
+    setSelections((prev) => prev.filter((s) => s.id !== boundaryId));
+  };
+
   return (
     <div className="app">
-      <MapView layers={layers} active={active} />
+      <MapView layers={layers} active={active} selections={selections} />
       <LayerPanel layers={layers} active={active} onToggle={toggle} status={status} />
+      <SearchPanel selections={selections} onSelect={selectBoundary} onRemove={removeBoundary} />
     </div>
   );
 }

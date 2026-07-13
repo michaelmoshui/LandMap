@@ -25,6 +25,7 @@ help: ## Show this help
 	@echo   make test-e2e      Run end-to-end tests with Playwright
 	@echo   make lint          Lint backend and frontend
 	@echo   make fmt           Auto-format backend and frontend
+	@echo   make ingest-boundaries  Refresh boundary polygons from open-data portals
 	@echo   make clean         Stop everything and remove volumes
 
 # ---- Run ----------------------------------------------------------------
@@ -107,6 +108,13 @@ lint: ## Lint backend (ruff) and frontend (eslint + tsc)
 .PHONY: fmt
 fmt: ## Auto-format backend (ruff) and frontend
 	$(COMPOSE_TEST) run --rm --build backend-tests ruff format .
+
+# ---- Data ---------------------------------------------------------------
+# The backend-tests service mounts ./backend/app, so the refreshed
+# backend/app/data/boundaries.geojson lands in the repo - review and commit it.
+.PHONY: ingest-boundaries
+ingest-boundaries: ## Refresh boundary polygons from government open-data portals
+	$(COMPOSE_TEST) run --rm --build backend-tests python -m app.ingest.boundaries
 
 # ---- Cleanup ------------------------------------------------------------
 .PHONY: clean
