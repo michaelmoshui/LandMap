@@ -1,5 +1,8 @@
 # AGENTS.md - Operating guide for AI agents on LandMap
 
+This repository is **vibe-coded**: most changes are made by AI agents. Read this
+file fully before making changes. It is the source of truth for how to work here.
+
 ## What LandMap is
 
 A web map of land information for the **Greater Vancouver Area**. Planned layers:
@@ -28,6 +31,22 @@ Browser --HTTP(S)--> Caddy (proxy, :80/:443)
 - `tests/e2e/` - Playwright end-to-end tests against the running stack.
 - Unit tests live **inside each service** (`backend/tests/`, `frontend/tests/`).
 
+## When you hit a bug (READ THIS FIRST)
+
+Before debugging **any** new issue - whether the user reports it or you hit it
+yourself - **open `BUG_LOG.md` and scan it for related symptoms.** Several
+problems in this project recur (file encoding, shell quoting, container/engine
+state), and the log already records the root cause and fix for each.
+
+Workflow:
+
+1. Reproduce/observe the symptom.
+2. Search `BUG_LOG.md` for matching error text or behavior. If found, apply the
+   documented fix.
+3. If it is a new bug, fix it, then **add an entry to `BUG_LOG.md`** (newest
+   first) with **Symptoms**, **Root cause**, and **Fix**.
+4. Add/extend a test that would have caught it, when practical.
+
 ## Golden rules for agents
 
 1. **Everything runs in Docker.** Do not assume Python/Node are installed on the
@@ -44,8 +63,10 @@ Browser --HTTP(S)--> Caddy (proxy, :80/:443)
 5. **Preserve the layer contract.** Frontend and backend agree on the API shape
    in `backend/app/schemas`. If you change it, update both sides and the e2e
    tests in the same change.
-6. **Pin dependencies.** Add versions; don't float to "latest" silently.
+6. **Pin dependencies.** Add versions; don't float to "latest".
 7. **Small, verifiable steps.** Prefer changes you can prove with `make test`.
+8. **Consult `BUG_LOG.md` first when debugging, and log new bugs there** (see the
+   section above).
 
 ## Common commands
 
@@ -65,6 +86,7 @@ Browser --HTTP(S)--> Caddy (proxy, :80/:443)
 - `make lint` passes.
 - `make test` passes (unit + e2e).
 - New/changed behavior is covered by tests.
+- New bugs are recorded in `BUG_LOG.md`.
 - Docs updated if commands, env vars, or the API contract changed.
 
 See `SKILL.md` for deeper, task-specific playbooks.
