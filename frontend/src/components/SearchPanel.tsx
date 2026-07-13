@@ -86,7 +86,11 @@ export default function SearchPanel({ selections, onSelect, onRemove }: SearchPa
                 data-testid="selected-boundary"
                 key={selection.id}
               >
-                <span className="swatch" style={{ backgroundColor: selection.color }} />
+                {/* Municipalities/neighborhoods use the map's focus (dim)
+                    effect; only lots get a highlight color. */}
+                {selection.kind === "lot" && (
+                  <span className="swatch" style={{ backgroundColor: selection.color }} />
+                )}
                 <span className="selected-name">{selection.name}</span>
                 <span className="kind-badge">{KIND_LABELS[selection.kind]}</span>
                 <button

@@ -115,3 +115,8 @@ def get_boundary(boundary_id: str) -> Feature | None:
     """Return a boundary's GeoJSON Feature, or None if unknown."""
     boundary = _boundaries_by_id().get(boundary_id)
     return boundary.feature() if boundary else None
+
+
+def list_boundaries(kind: BoundaryKind) -> list[Feature]:
+    """All boundaries of one kind, as GeoJSON Features (properties: id/name/kind)."""
+    return [b.feature() for b in _boundaries() if b.kind == kind]

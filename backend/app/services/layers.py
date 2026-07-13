@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from app.schemas.layers import Feature, FeatureCollection, LayerMeta
+from app.services import boundaries as boundaries_service
 
 # --- Layer metadata registry ----------------------------------------------
 
@@ -43,6 +44,18 @@ _LAYERS: list[LayerMeta] = [
         title="New High-Rises",
         description="Approved and proposed high-rise developments (sample data).",
         category="planned",
+    ),
+    LayerMeta(
+        id="municipality-boundaries",
+        title="Municipality Boundaries",
+        description="Metro Vancouver municipal boundaries (open data). Click one to focus it.",
+        category="baseline",
+    ),
+    LayerMeta(
+        id="neighborhood-boundaries",
+        title="Neighborhood Boundaries",
+        description="Official neighborhood boundaries (open data). Click one to focus it.",
+        category="baseline",
     ),
 ]
 
@@ -131,12 +144,22 @@ def _sample_new_highrises() -> FeatureCollection:
     )
 
 
+def _municipality_boundaries() -> FeatureCollection:
+    return FeatureCollection(features=boundaries_service.list_boundaries("municipality"))
+
+
+def _neighborhood_boundaries() -> FeatureCollection:
+    return FeatureCollection(features=boundaries_service.list_boundaries("neighborhood"))
+
+
 _BUILDERS: dict[str, Callable[[], FeatureCollection]] = {
     "housing-prices": _sample_housing_prices,
     "demographics": _sample_demographics,
     "skytrain-expansion": _sample_skytrain_expansion,
     "road-construction": _sample_road_construction,
     "new-highrises": _sample_new_highrises,
+    "municipality-boundaries": _municipality_boundaries,
+    "neighborhood-boundaries": _neighborhood_boundaries,
 }
 
 

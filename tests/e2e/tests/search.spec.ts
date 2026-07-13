@@ -29,16 +29,40 @@ test.describe("Boundary search and selection", () => {
     expect(ring.length).toBeGreaterThan(20);
   });
 
-  test("searching, selecting, and removing a boundary works in the UI", async ({ page }) => {
+  test("boundary layers serve every ingested boundary", async ({ request }) => {
+    const resp = await request.get("/api/layers/neighborhood-boundaries/features");
+    expect(resp.ok()).toBeTruthy();
+    const collection = await resp.json();
+    const ids = collection.features.map(
+      (f: { properties: { id: string } }) => f.properties.id,
+    );
+    expect(ids).toContain("hood-vancouver-kerrisdale");
+    expect(ids).toContain("hood-burnaby-lougheed");
+  });
+
+  test("toggling the boundary layers requests their features", async ({ page }) => {
+    const featuresRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/layers/neighborhood-boundaries/features"),
+    );
+    await page.goto("/");
+    await page.getByText("Neighborhood Boundaries").click();
+    await featuresRequest;
+  });
+
+  test("selecting a neighborhood enables its boundary layer for the focus effect", async ({
+    page,
+  }) => {
     await page.goto("/");
     const searchBox = page.getByLabel("Search boundaries");
 
-    const boundaryRequest = page.waitForRequest((req) =>
-      req.url().includes("/api/boundaries/hood-vancouver-kerrisdale"),
+    const layerRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/layers/neighborhood-boundaries/features"),
     );
     await searchBox.fill("kerrisdale");
     await page.getByTestId("search-result").filter({ hasText: "Kerrisdale" }).click();
-    await boundaryRequest;
+    await layerRequest;
+
+    await expect(page.getByRole("checkbox", { name: "Neighborhood Boundaries" })).toBeChecked();
 
     const selected = page.getByTestId("selected-boundary");
     await expect(selected).toHaveCount(1);
@@ -48,14 +72,14 @@ test.describe("Boundary search and selection", () => {
     await expect(selected).toHaveCount(0);
   });
 
-  test("two selections get different highlight colors", async ({ page }) => {
+  test("selected lots keep distinct highlight colors", async ({ page }) => {
     await page.goto("/");
     const searchBox = page.getByLabel("Search boundaries");
 
-    await searchBox.fill("lougheed");
-    await page.getByTestId("search-result").filter({ hasText: "Lougheed" }).click();
-    await searchBox.fill("coquitlam");
-    await page.getByTestId("search-result").filter({ hasText: /^Coquitlam/ }).click();
+    await searchBox.fill("kingsway");
+    await page.getByTestId("search-result").filter({ hasText: "Kingsway" }).click();
+    await searchBox.fill("cordova");
+    await page.getByTestId("search-result").filter({ hasText: "Cordova" }).click();
 
     const swatches = page.getByTestId("selected-boundary").locator(".swatch");
     await expect(swatches).toHaveCount(2);

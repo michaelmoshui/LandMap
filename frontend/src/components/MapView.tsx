@@ -3,8 +3,17 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef } from "react";
 
 import { fetchBoundary, fetchLayerFeatures } from "../api/client";
-import type { LayerMeta } from "../api/types";
+import type { BoundarySummary, LayerMeta } from "../api/types";
 import { BASE_MAP_STYLE } from "../map/baseMapStyle";
+import {
+  BOUNDARY_LAYER_BY_KIND,
+  buildBoundaryLayers,
+  dimFilter,
+  dimLayerIdFor,
+  hitLayerIdFor,
+  isBoundaryLayer,
+  kindForBoundaryLayer,
+} from "../map/boundaryLayers";
 import { buildMapLayers, sourceIdFor } from "../map/buildLayers";
 import { DEFAULT_ZOOM, VANCOUVER_CENTER } from "../map/layerStyles";
 import {
@@ -17,14 +26,24 @@ interface MapViewProps {
   layers: LayerMeta[];
   active: Set<string>;
   selections: SelectedBoundary[];
+  onBoundaryToggle: (boundary: BoundarySummary) => void;
 }
 
-export default function MapView({ layers, active, selections }: MapViewProps) {
+const HIT_LAYER_IDS = Object.values(BOUNDARY_LAYER_BY_KIND).map(hitLayerIdFor);
+
+function selectedIdsFor(layerId: string, selections: SelectedBoundary[]): string[] {
+  const kind = kindForBoundaryLayer(layerId);
+  return selections.filter((s) => s.kind === kind).map((s) => s.id);
+}
+
+export default function MapView({ layers, active, selections, onBoundaryToggle }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const loadedRef = useRef(false);
-  // Boundary ids currently rendered as selection highlights on the map.
-  const renderedSelectionsRef = useRef<Set<string>>(new Set());
+  // Lot ids currently rendered as colored highlights on the map.
+  const renderedLotsRef = useRef<Set<string>>(new Set());
+  const onBoundaryToggleRef = useRef(onBoundaryToggle);
+  onBoundaryToggleRef.current = onBoundaryToggle;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -38,12 +57,33 @@ export default function MapView({ layers, active, selections }: MapViewProps) {
     map.on("load", () => {
       loadedRef.current = true;
     });
+
+    // Cursor selection of boundaries. One global click handler so overlapping
+    // boundary layers toggle only the topmost feature under the cursor.
+    map.on("click", (event) => {
+      const present = HIT_LAYER_IDS.filter((id) => map.getLayer(id));
+      if (present.length === 0) return;
+      const hit = map.queryRenderedFeatures(event.point, { layers: present })[0];
+      const props = hit?.properties as Partial<BoundarySummary> | undefined;
+      if (props?.id && props.name && props.kind) {
+        onBoundaryToggleRef.current({ id: props.id, name: props.name, kind: props.kind });
+      }
+    });
+    for (const hitId of HIT_LAYER_IDS) {
+      map.on("mouseenter", hitId, () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", hitId, () => {
+        map.getCanvas().style.cursor = "";
+      });
+    }
+
     mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
       loadedRef.current = false;
-      renderedSelectionsRef.current = new Set();
+      renderedLotsRef.current = new Set();
     };
   }, []);
 
@@ -54,7 +94,9 @@ export default function MapView({ layers, active, selections }: MapViewProps) {
     const sync = async () => {
       for (const layer of layers) {
         const sourceId = sourceIdFor(layer.id);
-        const specs = buildMapLayers(layer.id, layer.category);
+        const specs = isBoundaryLayer(layer.id)
+          ? buildBoundaryLayers(layer.id, selectedIdsFor(layer.id, selections))
+          : buildMapLayers(layer.id, layer.category);
         const shouldShow = active.has(layer.id);
 
         if (shouldShow) {
@@ -73,6 +115,14 @@ export default function MapView({ layers, active, selections }: MapViewProps) {
               map.addLayer(spec as never);
             }
           }
+          if (isBoundaryLayer(layer.id)) {
+            // Dimming reflects the current selection even when the layers
+            // themselves already existed.
+            map.setFilter(
+              dimLayerIdFor(layer.id),
+              dimFilter(selectedIdsFor(layer.id, selections)) as never,
+            );
+          }
         } else {
           for (const spec of specs) {
             if (map.getLayer(spec.id)) map.removeLayer(spec.id);
@@ -86,15 +136,17 @@ export default function MapView({ layers, active, selections }: MapViewProps) {
     } else {
       map.once("load", () => void sync());
     }
-  }, [layers, active]);
+  }, [layers, active, selections]);
 
+  // Lots are too small for the dim treatment; they keep a colored highlight.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    const lots = selections.filter((s) => s.kind === "lot");
 
     const sync = async () => {
-      const rendered = renderedSelectionsRef.current;
-      const desired = new Set(selections.map((s) => s.id));
+      const rendered = renderedLotsRef.current;
+      const desired = new Set(lots.map((s) => s.id));
 
       for (const boundaryId of [...rendered]) {
         if (desired.has(boundaryId)) continue;
@@ -106,7 +158,7 @@ export default function MapView({ layers, active, selections }: MapViewProps) {
         rendered.delete(boundaryId);
       }
 
-      for (const selection of selections) {
+      for (const selection of lots) {
         if (rendered.has(selection.id)) continue;
         const sourceId = selectionSourceId(selection.id);
         if (!map.getSource(sourceId)) {

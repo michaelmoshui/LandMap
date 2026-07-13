@@ -53,17 +53,30 @@ describe("SearchPanel", () => {
     expect(await screen.findByTestId("search-result")).toBeDisabled();
   });
 
-  it("lists selections with their color swatch and removes on demand", async () => {
+  it("lists selections and removes on demand", async () => {
     const onRemove = vi.fn();
     render(<SearchPanel selections={[SELECTED]} onSelect={() => {}} onRemove={onRemove} />);
 
     const item = screen.getByTestId("selected-boundary");
     expect(item).toHaveTextContent("Kitsilano");
-    const swatch = item.querySelector(".swatch") as HTMLElement;
-    expect(swatch.style.backgroundColor).toBe("rgb(230, 25, 75)");
 
     await userEvent.click(screen.getByRole("button", { name: "Remove Kitsilano" }));
     expect(onRemove).toHaveBeenCalledWith("hood-kitsilano");
+  });
+
+  it("shows a color swatch only for lot selections", () => {
+    const lot: SelectedBoundary = {
+      id: "lot-007-241-374",
+      name: "Lot 007-241-374 (2131 W 4th Ave)",
+      kind: "lot",
+      color: "#3cb44b",
+    };
+    render(<SearchPanel selections={[SELECTED, lot]} onSelect={() => {}} onRemove={() => {}} />);
+
+    const items = screen.getAllByTestId("selected-boundary");
+    expect(items[0].querySelector(".swatch")).toBeNull();
+    const swatch = items[1].querySelector(".swatch") as HTMLElement;
+    expect(swatch.style.backgroundColor).toBe("rgb(60, 180, 75)");
   });
 
   it("shows an empty state when nothing matches", async () => {
