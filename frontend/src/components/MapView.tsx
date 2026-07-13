@@ -3,16 +3,16 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef } from "react";
 
 import { fetchBoundary, fetchLayerFeatures } from "../api/client";
-import type { BoundarySummary, LayerMeta } from "../api/types";
+import type { BoundarySummary, FeatureCollection, LayerMeta } from "../api/types";
 import { BASE_MAP_STYLE } from "../map/baseMapStyle";
 import {
   BOUNDARY_LAYER_BY_KIND,
   buildBoundaryLayers,
-  dimFilter,
-  dimLayerIdFor,
+  buildDimMask,
   hitLayerIdFor,
   isBoundaryLayer,
   kindForBoundaryLayer,
+  maskSourceIdFor,
 } from "../map/boundaryLayers";
 import { buildMapLayers, sourceIdFor } from "../map/buildLayers";
 import { DEFAULT_ZOOM, VANCOUVER_CENTER } from "../map/layerStyles";
@@ -31,9 +31,17 @@ interface MapViewProps {
 
 const HIT_LAYER_IDS = Object.values(BOUNDARY_LAYER_BY_KIND).map(hitLayerIdFor);
 
-function selectedIdsFor(layerId: string, selections: SelectedBoundary[]): string[] {
+function selectedFeaturesFor(
+  layerId: string,
+  selections: SelectedBoundary[],
+  data: FeatureCollection | undefined,
+): FeatureCollection["features"] {
   const kind = kindForBoundaryLayer(layerId);
-  return selections.filter((s) => s.kind === kind).map((s) => s.id);
+  const selectedIds = new Set(
+    selections.filter((s) => s.kind === kind).map((s) => s.id),
+  );
+  if (selectedIds.size === 0 || !data) return [];
+  return data.features.filter((f) => selectedIds.has((f.properties.id as string) ?? ""));
 }
 
 export default function MapView({ layers, active, selections, onBoundaryToggle }: MapViewProps) {
@@ -42,6 +50,8 @@ export default function MapView({ layers, active, selections, onBoundaryToggle }
   const loadedRef = useRef(false);
   // Lot ids currently rendered as colored highlights on the map.
   const renderedLotsRef = useRef<Set<string>>(new Set());
+  // Fetched FeatureCollections per layer, used to build the dim masks.
+  const layerDataRef = useRef<Map<string, FeatureCollection>>(new Map());
   const onBoundaryToggleRef = useRef(onBoundaryToggle);
   onBoundaryToggleRef.current = onBoundaryToggle;
 
@@ -84,6 +94,7 @@ export default function MapView({ layers, active, selections, onBoundaryToggle }
       mapRef.current = null;
       loadedRef.current = false;
       renderedLotsRef.current = new Set();
+      layerDataRef.current = new Map();
     };
   }, []);
 
@@ -95,7 +106,7 @@ export default function MapView({ layers, active, selections, onBoundaryToggle }
       for (const layer of layers) {
         const sourceId = sourceIdFor(layer.id);
         const specs = isBoundaryLayer(layer.id)
-          ? buildBoundaryLayers(layer.id, selectedIdsFor(layer.id, selections))
+          ? buildBoundaryLayers(layer.id)
           : buildMapLayers(layer.id, layer.category);
         const shouldShow = active.has(layer.id);
 
@@ -103,6 +114,7 @@ export default function MapView({ layers, active, selections, onBoundaryToggle }
           if (!map.getSource(sourceId)) {
             try {
               const data = await fetchLayerFeatures(layer.id);
+              layerDataRef.current.set(layer.id, data);
               if (!map.getSource(sourceId)) {
                 map.addSource(sourceId, { type: "geojson", data: data as never });
               }
@@ -110,18 +122,21 @@ export default function MapView({ layers, active, selections, onBoundaryToggle }
               continue;
             }
           }
+          if (isBoundaryLayer(layer.id)) {
+            // Dim everything except the selected shapes, so the map always
+            // matches the selection list regardless of dataset coverage.
+            const mask = buildDimMask(
+              selectedFeaturesFor(layer.id, selections, layerDataRef.current.get(layer.id)),
+            );
+            const maskId = maskSourceIdFor(layer.id);
+            const maskSource = map.getSource(maskId) as maplibregl.GeoJSONSource | undefined;
+            if (maskSource) maskSource.setData(mask as never);
+            else map.addSource(maskId, { type: "geojson", data: mask as never });
+          }
           for (const spec of specs) {
             if (!map.getLayer(spec.id)) {
               map.addLayer(spec as never);
             }
-          }
-          if (isBoundaryLayer(layer.id)) {
-            // Dimming reflects the current selection even when the layers
-            // themselves already existed.
-            map.setFilter(
-              dimLayerIdFor(layer.id),
-              dimFilter(selectedIdsFor(layer.id, selections)) as never,
-            );
           }
         } else {
           for (const spec of specs) {

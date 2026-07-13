@@ -160,14 +160,25 @@ def municipality_features(raw: dict[str, Any]) -> list[dict[str, Any]]:
     return results
 
 
+# Burnaby's "Community Plan Area Boundaries" mixes real neighborhoods with
+# special-purpose planning areas; the latter are not neighborhoods and only
+# add noise to search/selection.
+BURNABY_EXCLUDE_KEYWORDS = ("park", "conservation", "buffer", "administrative", "sports complex")
+
+
 def neighborhood_features(
-    raw: dict[str, Any], name_key: str, municipality: str
+    raw: dict[str, Any],
+    name_key: str,
+    municipality: str,
+    exclude_keywords: tuple[str, ...] = (),
 ) -> list[dict[str, Any]]:
     """City open-data rows -> neighborhood features named '<Area> (<City>)'."""
     results = []
     for feature in raw["features"]:
         name = (feature["properties"].get(name_key) or "").strip()
         if not name or feature.get("geometry") is None:
+            continue
+        if any(keyword in name.lower() for keyword in exclude_keywords):
             continue
         simplified = simplify_geometry(feature["geometry"], SIMPLIFY_TOLERANCE_DEG)
         if not simplified:
@@ -193,7 +204,12 @@ def main() -> None:
     van = neighborhood_features(_fetch_geojson(VANCOUVER_NEIGHBORHOODS_URL), "name", "Vancouver")
     print(f"  {len(van)} neighborhoods")
     print("Fetching Burnaby neighborhoods (City of Burnaby Open Data)...")
-    bby = neighborhood_features(_fetch_geojson(BURNABY_NEIGHBORHOODS_URL), "AREA_NAME", "Burnaby")
+    bby = neighborhood_features(
+        _fetch_geojson(BURNABY_NEIGHBORHOODS_URL),
+        "AREA_NAME",
+        "Burnaby",
+        exclude_keywords=BURNABY_EXCLUDE_KEYWORDS,
+    )
     print(f"  {len(bby)} neighborhoods")
 
     collection = {"type": "FeatureCollection", "features": munis + van + bby}

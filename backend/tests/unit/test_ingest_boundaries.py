@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from app.ingest.boundaries import (
+    BURNABY_EXCLUDE_KEYWORDS,
     merge_geometries,
     municipality_features,
     neighborhood_features,
@@ -93,3 +94,17 @@ def test_neighborhood_features_are_namespaced_by_municipality() -> None:
         "name": "Kerrisdale (Vancouver)",
         "kind": "neighborhood",
     }
+
+
+def test_neighborhood_features_exclude_non_neighborhood_plan_areas() -> None:
+    raw = {
+        "features": [
+            {"properties": {"AREA_NAME": "Lougheed"}, "geometry": _square_geometry(0.0)},
+            {"properties": {"AREA_NAME": "Chevron Buffer Area"}, "geometry": _square_geometry(1.0)},
+            {"properties": {"AREA_NAME": "Burnaby Lake Park"}, "geometry": _square_geometry(2.0)},
+        ]
+    }
+    features = neighborhood_features(
+        raw, "AREA_NAME", "Burnaby", exclude_keywords=BURNABY_EXCLUDE_KEYWORDS
+    )
+    assert [f["properties"]["name"] for f in features] == ["Lougheed (Burnaby)"]
