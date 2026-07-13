@@ -3,8 +3,8 @@
 # ---- deps: install node modules (cached across builds) -----------------
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # ---- test: run Vitest unit tests ---------------------------------------
 FROM deps AS test
