@@ -11,9 +11,9 @@ router = APIRouter(prefix="/layers", tags=["layers"])
 
 
 @router.get("", response_model=list[LayerMeta])
-def list_layers() -> list[LayerMeta]:
-    """List all available map layers and their metadata."""
-    return layers_service.list_layers()
+def list_layers(region: str | None = None) -> list[LayerMeta]:
+    """List available map layers, optionally filtered to one region."""
+    return layers_service.list_layers(region)
 
 
 @router.get("/{layer_id}/features", response_model=FeatureCollection)

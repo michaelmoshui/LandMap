@@ -32,4 +32,51 @@ test.describe("LandMap end-to-end", () => {
     const req = await featuresRequest;
     expect(req.url()).toContain("/api/layers/housing-prices/features");
   });
+
+  test("GVA layers serve ingested real data", async ({ request }) => {
+    // housing-prices: one polygon per Vancouver local area with assessed values.
+    const housing = await (await request.get("/api/layers/housing-prices/features")).json();
+    expect(housing.features.length).toBeGreaterThanOrEqual(20);
+    const housingProps = housing.features[0].properties;
+    expect(housingProps).toHaveProperty("area");
+    expect(housingProps).toHaveProperty("strata_avg_value");
+
+    // demographics: census population per Metro Vancouver municipality.
+    const demo = await (await request.get("/api/layers/demographics/features")).json();
+    const vancouver = demo.features.find(
+      (f: { properties: { municipality: string } }) => f.properties.municipality === "Vancouver",
+    );
+    expect(vancouver.properties.population_2021).toBeGreaterThan(500000);
+  });
+
+  test("regions API lists Vancouver and Toronto", async ({ request }) => {
+    const resp = await request.get("/api/regions");
+    expect(resp.ok()).toBeTruthy();
+    const regions = (await resp.json()) as Array<{ id: string; center: number[] }>;
+    const ids = regions.map((r) => r.id);
+    expect(ids).toContain("gva");
+    expect(ids).toContain("gta");
+    for (const region of regions) {
+      expect(region.center).toHaveLength(2);
+    }
+  });
+
+  test("sources API serves entries parsed from SOURCES.md", async ({ request }) => {
+    const resp = await request.get("/api/sources?region=gta");
+    expect(resp.ok()).toBeTruthy();
+    const sources = (await resp.json()) as Array<{ url: string; region: string }>;
+    expect(sources.length).toBeGreaterThan(0);
+    for (const source of sources) {
+      expect(source.region).toBe("gta");
+      expect(source.url).toMatch(/^https?:\/\//);
+    }
+  });
+
+  test("switching to Toronto shows GTA layers", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("SkyTrain Expansion")).toBeVisible();
+    await page.getByLabel("Region").selectOption("gta");
+    await expect(page.getByText("Transit Expansion", { exact: true })).toBeVisible();
+    await expect(page.getByText("SkyTrain Expansion")).not.toBeVisible();
+  });
 });

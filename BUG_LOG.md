@@ -10,7 +10,7 @@ Each entry records:
 
 ---
 
-## BUG-008: Selecting a boundary dimmed an arbitrary-looking patchwork of areas
+## BUG-011: Selecting a boundary dimmed an arbitrary-looking patchwork of areas
 
 - **Symptoms**
   - Clicking Brentwood (Burnaby) selected it correctly (selection list right),
@@ -41,38 +41,103 @@ Each entry records:
 
 ---
 
-## BUG-007: ruff misclassified `app` imports as third-party (bogus I001 errors)
+## BUG-010: Ingested GeoJSON snapshots silently absent from git (`data/` ignore rule)
 
 - **Symptoms**
-  - `ruff check` reported `I001 Import block is un-sorted` on files whose
-    imports were correctly grouped (`from app...` in its own first-party block).
-  - `ruff check --fix` "fixed" them by merging `app` imports into the
-    third-party group (between `pytest` and `fastapi`) - clearly wrong.
+  - `backend/app/data/gva/*.geojson` exists and is served locally, but never
+    shows up in `git status`, so a fresh clone (and any Docker image built in
+    CI) would quietly fall back to sample data with no error.
 - **Root cause**
-  - `backend/pyproject.toml` had `src = ["app", "tests"]`. Ruff's `src` entries
-    must be directories that *contain* top-level modules, so ruff looked for the
-    `app` package inside `app/` and `tests/`, failed, and treated it as
-    third-party.
+  - `.gitignore` has a bare `data/` rule meant for Docker *volume* mounts,
+    which matches **any** directory named `data` at any depth - including the
+    committed layer snapshots under `backend/app/data/`.
 - **Fix**
-  - `src = ["."]` - the backend project root contains the `app` package.
-  - Never accept an auto-fix that moves first-party imports into the
-    third-party group; that signals a config problem, not an import problem.
+  - Added `!backend/app/data/` right below the `data/` rule.
+  - When adding new generated-but-committed artifacts, run
+    `git check-ignore -v <path>` to confirm they are actually trackable;
+    "no diff" after creating files is a red flag, not a success.
 
 ---
 
-## BUG-006: Docker socket permission denied on Linux host
+## BUG-009: `make dev` fails with `address already in use` on :5173 (host Vite survives `make down`)
 
 - **Symptoms**
-  - Every `make` target failed immediately with
-    `permission denied while trying to connect to the docker API at unix:///var/run/docker.sock`.
+  - `make dev` aborts with
+    `failed to bind host port 0.0.0.0:5173/tcp: address already in use`.
+  - `make down` does **not** fix it; `ss -ltnp | grep :5173` shows a host
+    `node .../node_modules/.bin/vite` process (not a container).
 - **Root cause**
-  - `/var/run/docker.sock` is owned by `root:docker` (mode 660) and the login
-    user is not in the `docker` group, so the Docker CLI cannot reach the daemon.
+  - An earlier session ran Vite directly on the host as a fallback (see
+    BUG-007). `make down` / `down-dev` call `docker compose down`, which only
+    stops containers, so the host Vite keeps holding 5173 and blocks the
+    containerized frontend from binding.
 - **Fix**
-  - `sudo usermod -aG docker $USER`, then log out/in (or `newgrp docker`) so the
-    group membership takes effect; verify with `docker info`.
-  - Note the Docker-created bind-mount dirs (e.g. `frontend/node_modules`) may be
-    root-owned, which also blocks host-side `npm install` until ownership is fixed.
+  - `make stop-host` kills host dev servers listening on the dev ports
+    (5173/8000). It only kills node/python listeners, so it never touches the
+    containerized stack's root-owned `docker-proxy`. It is now a prerequisite
+    of `make dev`, `make down-dev`, and `make clean`, so re-running `make dev`
+    self-heals.
+  - Rule of thumb: if `make down` doesn't free a port, it's a host process -
+    `ss -ltnp | grep :<port>` then `make stop-host`.
+  - Note: the cleanup must match by *port listener*, not `pgrep -f` on the
+    repo path - a `.*` command-line pattern greedily self-matches the `make`/
+    shell process running it and can kill your own shell.
+
+---
+
+## BUG-008: Root-owned empty `frontend/node_modules` blocks host `npm install`
+
+- **Symptoms**
+  - `npm ci` / `npm install` in `frontend/` failed with
+    `EACCES: mkdir '/home/alex/landmap/frontend/node_modules/@adobe'`.
+  - `frontend/node_modules` existed but was empty and owned by `root:root`.
+- **Root cause**
+  - A previous Docker run created the directory as root on the host (compose
+    named-volume mount point). npm running as the regular user cannot write
+    into a root-owned directory.
+- **Fix**
+  - The directory is empty, so the user (who owns the parent) can remove it:
+    `rmdir frontend/node_modules`, then reinstall. If non-empty, it needs
+    `sudo rm -rf`.
+
+---
+
+## BUG-007: Docker commands fail with `permission denied` on the docker socket (Linux)
+
+- **Symptoms**
+  - Every `make`/`docker compose` target failed with
+    `permission denied while trying to connect to the docker API at
+    unix:///var/run/docker.sock`.
+- **Root cause**
+  - `/var/run/docker.sock` is `root:docker` and the login user is not in the
+    `docker` group, so the daemon is running but unreachable without root.
+    (Distinct from BUG-005, where the engine itself was not running.)
+- **Fix**
+  - `sudo usermod -aG docker $USER`, then log out/in (or `newgrp docker`).
+  - Until then, tests can be run on the host as a fallback: a venv with
+    `backend/requirements-dev.txt` for pytest/ruff, `npm ci` in `frontend/`
+    for Vitest/eslint - but `make test` in Docker remains the authoritative
+    gate.
+
+---
+
+## BUG-006: ruff flags valid imports with I001 (first-party `app` not detected)
+
+- **Symptoms**
+  - `ruff check .` reported `I001 Import block is un-sorted or un-formatted`
+    on files whose imports were correctly grouped (stdlib / third-party /
+    `app.*`), including files that had previously passed lint.
+- **Root cause**
+  - `backend/pyproject.toml` had `src = ["app", "tests"]`. ruff resolves those
+    relative to the project root, so it looked for first-party packages
+    *inside* `backend/app/` and `backend/tests/`. The `app` package actually
+    lives *at* the root, so `app` was classified third-party and its imports
+    were expected in the third-party block.
+- **Fix**
+  - Set `src = ["."]` so ruff finds the `app` package and treats it as
+    first-party. No import blocks needed reordering.
+  - Never accept an auto-fix that moves first-party imports into the
+    third-party group; that signals a config problem, not an import problem.
 
 ---
 

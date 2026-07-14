@@ -2,12 +2,28 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { LayerMeta } from "../../src/api/types";
+import type { DataSource, LayerMeta, RegionMeta } from "../../src/api/types";
 import LayerPanel, { groupByCategory } from "../../src/components/LayerPanel";
 
 const LAYERS: LayerMeta[] = [
-  { id: "housing-prices", title: "Housing Prices", description: "", category: "baseline" },
-  { id: "skytrain-expansion", title: "SkyTrain Expansion", description: "", category: "planned" },
+  { id: "housing-prices", title: "Housing Prices", description: "", category: "baseline", region: "gva" },
+  { id: "skytrain-expansion", title: "SkyTrain Expansion", description: "", category: "planned", region: "gva" },
+];
+
+const REGIONS: RegionMeta[] = [
+  { id: "gva", title: "Greater Vancouver Area", center: [-123.02, 49.24], zoom: 10.5 },
+  { id: "gta", title: "Greater Toronto Area", center: [-79.38, 43.71], zoom: 9.8 },
+];
+
+const SOURCES: DataSource[] = [
+  {
+    id: "metro-vancouver-portal",
+    name: "Metro Vancouver Portal",
+    description: "Regional hub.",
+    url: "https://example.com/data",
+    region: "gva",
+    group: "Regional Hubs",
+  },
 ];
 
 describe("groupByCategory", () => {
@@ -41,5 +57,37 @@ describe("LayerPanel", () => {
     const checkboxes = screen.getAllByRole("checkbox");
     expect((checkboxes[0] as HTMLInputElement).checked).toBe(true);
     expect((checkboxes[1] as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("renders a region selector and reports changes", async () => {
+    const onRegionChange = vi.fn();
+    render(
+      <LayerPanel
+        layers={LAYERS}
+        active={new Set()}
+        onToggle={() => {}}
+        regions={REGIONS}
+        regionId="gva"
+        onRegionChange={onRegionChange}
+      />,
+    );
+    expect(screen.getByText("Greater Vancouver Area land information")).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText("Region"), "gta");
+    expect(onRegionChange).toHaveBeenCalledWith("gta");
+  });
+
+  it("lists data sources with links", () => {
+    render(
+      <LayerPanel
+        layers={LAYERS}
+        active={new Set()}
+        onToggle={() => {}}
+        regions={REGIONS}
+        regionId="gva"
+        sources={SOURCES}
+      />,
+    );
+    const link = screen.getByRole("link", { name: "Metro Vancouver Portal" });
+    expect(link).toHaveAttribute("href", "https://example.com/data");
   });
 });

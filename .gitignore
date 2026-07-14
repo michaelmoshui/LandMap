@@ -20,6 +20,7 @@ coverage.xml
 node_modules/
 dist/
 .vite/
+*.tsbuildinfo
 *.local
 npm-debug.log*
 pnpm-debug.log*
@@ -32,7 +33,7 @@ blob-report/
 .playwright/
 
 # Docker / data volumes (root-level only; backend/app/data holds committed
-# ingested boundaries - see BUG_LOG.md BUG-009)
+# ingested layer snapshots and boundaries - see app/ingest and BUG_LOG.md BUG-009)
 /data/
 pgdata/
 caddy_data/

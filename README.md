@@ -1,16 +1,21 @@
 # LandMap
 
-An open, self-hostable web map of land information for the **Greater Vancouver
-Area** - housing prices and demographics today, with forward-looking layers
-(road construction, SkyTrain expansion, new high-rises) sourced from government
-plans as the project grows. Municipality and neighborhood boundaries can be
-toggled as map layers and selected by clicking them (or via search); selected
-areas keep the normal map colors while all non-selected boundaries dim, once
-at least one is selected. Lots are searchable too and highlight in distinct
-colors. Boundary polygons are real government open data (Metro Vancouver
-municipalities; Vancouver and Burnaby neighborhoods so far - see `SOURCES.md`),
-refreshed with `make ingest-boundaries`; lots are sample data until parcel
-ingestion lands.
+Area** and the **Greater Toronto Area** - housing prices and demographics
+today, with forward-looking layers (road construction, transit expansion, new
+high-rises) sourced from government plans as the project grows.
+
+Regions and their open-data portals are cataloged in
+[`SOURCES.md`](./SOURCES.md); the backend parses it at request time (it is
+bind-mounted into the container), so editing that file updates `/api/regions`
+and `/api/sources` without a rebuild.
+
+Municipality and neighborhood boundaries can be toggled as map layers and
+selected by clicking them (or via search); selected areas keep the normal map
+colors while all non-selected boundaries dim, once at least one is selected.
+Lots are searchable too and highlight in distinct colors. Boundary polygons are
+real government open data (Metro Vancouver municipalities; Vancouver and Burnaby
+neighborhoods so far - see `SOURCES.md`), refreshed with
+`make ingest-boundaries`; lots are sample data until parcel ingestion lands.
 
 ## Stack
 

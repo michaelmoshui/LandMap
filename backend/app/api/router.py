@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.routes import boundaries, health, layers
+from app.api.routes import boundaries, health, layers, regions
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(layers.router)
+api_router.include_router(regions.router)
 api_router.include_router(boundaries.router)

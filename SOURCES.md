@@ -32,13 +32,21 @@ This document aggregates open data catalogs, interactive GIS mapping utilities, 
     *   **Endpoint**: [Metro Vancouver Open Data Portal](https://open-data-portal-metrovancouver.hub.arcgis.com/)
 *   **City of Vancouver Open Data Portal**
     *   **Description**: High-fidelity data repository operating on the *Opendatasoft* engine. Facilitates programmatic schema extraction via direct REST APIs, CSV pipelines, or static GeoJSON arrays.
-    *   **Endpoint**: [City of Vancouver Open Data Portal Catalog](https://vancouver.ca)
+    *   **Endpoint**: [City of Vancouver Open Data Portal Catalog](https://opendata.vancouver.ca/)
 *   **City of Vancouver Issued Building Permits Map**
     *   **Description**: Mapping catalog isolating parcel-level structural adjustments, updates, and historic real estate developments.
     *   **Endpoint**: [City of Vancouver Issued Permits Map](https://opendata.vancouver.ca/explore/dataset/issued-building-permits/map/)
 *   **Shape Your City Vancouver**
     *   **Description**: Dynamic public consultation mapping dashboard isolating active rezoning requests and major structural development permits.
     *   **Endpoint**: [Shape Your City Vancouver Development](https://shapeyourcity.ca)
+
+### Federal & Community Data
+*   **Statistics Canada 2021 Census (via Esri Canada FeatureServer)**
+    *   **Description**: Population and dwelling counts per census subdivision, republished by Esri Canada as a queryable public ArcGIS FeatureServer. Feeds the GVA `demographics` layer (Metro Vancouver CSDs, `CSDUID LIKE '5915%'`).
+    *   **Endpoint**: [Canadian Population and Dwelling Counts 2021](https://services.arcgis.com/wjcPoefzjpzCgffS/arcgis/rest/services/Canadian_Population_and_Dwelling_Counts_2021/FeatureServer)
+*   **OpenStreetMap (Overpass API)**
+    *   **Description**: Community-maintained geodata under ODbL. Carries the under-construction SkyTrain alignments and station sites (Broadway Extension, Surrey-Langley) that no government portal exposes as open GIS layers; queried via Overpass. Feeds the GVA `skytrain-expansion` layer.
+    *   **Endpoint**: [Overpass API](https://overpass-api.de/api/interpreter)
 
 ### The Tri-Cities
 *   **City of Coquitlam Open Data Catalog**

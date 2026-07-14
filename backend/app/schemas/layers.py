@@ -20,6 +20,27 @@ class LayerMeta(BaseModel):
     title: str = Field(..., examples=["Housing Prices"])
     description: str = Field(default="")
     category: LayerCategory = Field(default="baseline")
+    region: str = Field(default="gva", examples=["gva", "gta"])
+
+
+class RegionMeta(BaseModel):
+    """A metro region the map can focus on. Derived from SOURCES.md sections."""
+
+    id: str = Field(..., examples=["gva", "gta"])
+    title: str = Field(..., examples=["Greater Vancouver Area"])
+    center: tuple[float, float] = Field(..., description="[lng, lat] viewport center")
+    zoom: float = Field(default=10.0)
+
+
+class DataSource(BaseModel):
+    """An open-data portal or GIS endpoint listed in SOURCES.md."""
+
+    id: str = Field(..., examples=["city-of-vancouver-open-data-portal"])
+    name: str
+    description: str = Field(default="")
+    url: str
+    region: str = Field(..., examples=["gva", "gta"])
+    group: str = Field(default="", examples=["Toronto Core", "The Tri-Cities"])
 
 
 class Feature(BaseModel):

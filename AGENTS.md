@@ -5,14 +5,30 @@ file fully before making changes. It is the source of truth for how to work here
 
 ## What LandMap is
 
-A web map of land information for the **Greater Vancouver Area**. Planned layers:
+A web map of land information for the **Greater Vancouver Area (`gva`)** and
+the **Greater Toronto Area (`gta`)**. Planned layers:
 
 - Baseline: housing prices, demographics.
-- Forward-looking (from government sources): road construction, SkyTrain
-  expansion, upcoming high-rise developments - surfaced *before* work begins.
+- Forward-looking (from government sources): road construction, transit
+  expansion (SkyTrain, Ontario Line), upcoming high-rise developments -
+  surfaced *before* work begins.
 
-The current codebase is a **scaffold**: the plumbing (map, API, DB, tests,
-containers) is in place with sample data. Real data ingestion comes later.
+Regions and their open-data portals live in **`SOURCES.md`**. The backend
+parses it at request time (`app/services/sources.py`; the file is bind-mounted
+into the backend container) and serves it via `GET /api/regions` and
+`GET /api/sources?region=`. Layers carry a `region` field and can be filtered
+with `GET /api/layers?region=`. To add a region or portal, edit SOURCES.md - a
+`## <Region Name> (ACRONYM)` section plus `* **Name**` bullets with nested
+`**Description**`/`**Endpoint**` fields is all the parser needs (add a
+viewport in `_REGION_VIEWPORTS` for a new region).
+
+Layer data is served from **ingested GeoJSON snapshots** committed under
+`backend/app/data/<region>/` and refreshed with `make ingest-gva` (see
+`backend/app/ingest/`). The GVA layers carry real data pulled from the
+SOURCES.md portals (City of Vancouver Opendatasoft, StatCan census, OSM
+Overpass); layers without a snapshot (currently all of the GTA) fall back to
+built-in sample data. PostGIS wiring is scaffolded for when layers outgrow
+flat files.
 
 ## Architecture (keep this mental model)
 
@@ -80,6 +96,7 @@ Workflow:
 | Frontend unit tests          | `make test-frontend` |
 | End-to-end tests             | `make test-e2e`      |
 | Lint / format                | `make lint` / `make fmt` |
+| Refresh GVA data snapshots   | `make ingest-gva`    |
 
 ## Definition of done
 
