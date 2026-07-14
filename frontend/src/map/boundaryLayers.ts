@@ -10,13 +10,19 @@ import { sourceIdFor } from "./buildLayers";
 // (see BUG_LOG.md BUG-008). Lots are excluded: they use the colored highlight
 // in selection.ts instead.
 
-export const BOUNDARY_LAYER_BY_KIND: Partial<Record<BoundaryKind, string>> = {
+const LAYER_ID_BY_SELECTABLE_KIND = {
   municipality: "municipality-boundaries",
   neighborhood: "neighborhood-boundaries",
-};
+} as const;
+
+export const BOUNDARY_LAYER_BY_KIND: Partial<Record<BoundaryKind, string>> =
+  LAYER_ID_BY_SELECTABLE_KIND;
+
+// Typed explicitly: Object.values on the Partial record above would be any[].
+export const BOUNDARY_LAYER_IDS: readonly string[] = Object.values(LAYER_ID_BY_SELECTABLE_KIND);
 
 const KIND_BY_BOUNDARY_LAYER = new Map<string, BoundaryKind>(
-  Object.entries(BOUNDARY_LAYER_BY_KIND).map(([kind, layerId]) => [
+  Object.entries(LAYER_ID_BY_SELECTABLE_KIND).map(([kind, layerId]) => [
     layerId,
     kind as BoundaryKind,
   ]),

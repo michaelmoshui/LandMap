@@ -6,7 +6,7 @@ import { fetchBoundary, fetchLayerFeatures } from "../api/client";
 import type { BoundarySummary, FeatureCollection, LayerMeta } from "../api/types";
 import { BASE_MAP_STYLE } from "../map/baseMapStyle";
 import {
-  BOUNDARY_LAYER_BY_KIND,
+  BOUNDARY_LAYER_IDS,
   buildBoundaryLayers,
   buildDimMask,
   hitLayerIdFor,
@@ -29,7 +29,7 @@ interface MapViewProps {
   onBoundaryToggle: (boundary: BoundarySummary) => void;
 }
 
-const HIT_LAYER_IDS = Object.values(BOUNDARY_LAYER_BY_KIND).map(hitLayerIdFor);
+const HIT_LAYER_IDS = BOUNDARY_LAYER_IDS.map(hitLayerIdFor);
 
 function selectedFeaturesFor(
   layerId: string,

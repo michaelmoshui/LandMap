@@ -1,6 +1,6 @@
 # Canadian Municipal Geospatial Data Portals
 
-This document aggregates verified open data catalogs, interactive GIS mapping utilities, and spatial repositories for major metropolitan regions across Canada. 
+This document aggregates open data catalogs, interactive GIS mapping utilities, and spatial repositories for major metropolitan regions across Canada. Entries are starting points, not all individually verified; the exception is the "Endpoints used by LandMap" section below, whose URLs are verified programmatic endpoints.
 
 ---
 
@@ -35,7 +35,7 @@ This document aggregates verified open data catalogs, interactive GIS mapping ut
     *   **Endpoint**: [City of Vancouver Open Data Portal Catalog](https://vancouver.ca)
 *   **City of Vancouver Issued Building Permits Map**
     *   **Description**: Mapping catalog isolating parcel-level structural adjustments, updates, and historic real estate developments.
-    *   **Endpoint**: [City of Vancouver Issued Permits Map](https://vancouver.cadataset/issued-building-permits/map/)
+    *   **Endpoint**: [City of Vancouver Issued Permits Map](https://opendata.vancouver.ca/explore/dataset/issued-building-permits/map/)
 *   **Shape Your City Vancouver**
     *   **Description**: Dynamic public consultation mapping dashboard isolating active rezoning requests and major structural development permits.
     *   **Endpoint**: [Shape Your City Vancouver Development](https://shapeyourcity.ca)
