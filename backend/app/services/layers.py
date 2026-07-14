@@ -144,6 +144,66 @@ _LAYERS: list[LayerMeta] = [
         region="gta",
     ),
     LayerMeta(
+        id="gta-subway-lines",
+        title="Subway Lines",
+        description=(
+            "TTC rapid transit Lines 1-6 (subway and LRT) in the TTC's "
+            "official line colours. Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-subway-stations",
+        title="Subway Stations",
+        description=(
+            "TTC subway and LRT stations with the lines serving each. "
+            "Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-streetcar-lines",
+        title="Streetcar Lines",
+        description=(
+            "TTC streetcar network in the TTC's colours (day routes red, "
+            "night routes blue). Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-bus-routes",
+        title="Bus Routes",
+        description=(
+            "All TTC bus routes in the TTC's colours (day red, express green, "
+            "night blue). Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-bus-stops",
+        title="Bus Stops",
+        description=(
+            "Every TTC bus and streetcar stop with the routes serving it. "
+            "Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-go-transit",
+        title="GO Transit Rail",
+        description=(
+            "GO train lines and stations in Metrolinx's official line "
+            "colours. Source: GO Transit (Metrolinx) GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
         id="gta-transit-expansion",
         title="Transit Expansion",
         description="Planned subway/transit extensions and new stations (sample data).",
@@ -410,6 +470,119 @@ def _sample_gta_demographics() -> FeatureCollection:
     )
 
 
+# TTC and GO official route colours (from their GTFS feeds' route_color).
+_TTC = {
+    "line1": "#D5C82B",
+    "line2": "#008000",
+    "line4": "#B300B3",
+    "streetcar": "#ED1C24",
+}
+_GO_LAKESHORE_WEST = "#98002E"
+
+
+def _sample_gta_subway_lines() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.4163, 43.6822], [-79.3806, 43.6459], [-79.3941, 43.7615]],
+                route="Line 1 (Yonge-University) (sample)",
+                mode="Subway",
+                color=_TTC["line1"],
+            ),
+            _line(
+                [[-79.5372, 43.6363], [-79.4530, 43.6559], [-79.2930, 43.6866]],
+                route="Line 2 (Bloor - Danforth) (sample)",
+                mode="Subway",
+                color=_TTC["line2"],
+            ),
+            _line(
+                [[-79.4113, 43.7615], [-79.3460, 43.7756]],
+                route="Line 4 (Sheppard) (sample)",
+                mode="Subway",
+                color=_TTC["line4"],
+            ),
+        ]
+    )
+
+
+def _sample_gta_subway_stations() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(
+                -79.3806,
+                43.6459,
+                station="Union Station (sample)",
+                lines="Line 1 (Yonge-University)",
+                color=_TTC["line1"],
+            ),
+            _point(
+                -79.3995,
+                43.6682,
+                station="St George Station (sample)",
+                lines="Line 1 (Yonge-University), Line 2 (Bloor - Danforth)",
+                color="#333333",
+            ),
+        ]
+    )
+
+
+def _sample_gta_streetcar_lines() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.4677, 43.6362], [-79.3841, 43.6497], [-79.2989, 43.6684]],
+                route="501 (sample)",
+                name="Queen",
+                mode="Streetcar",
+                color=_TTC["streetcar"],
+            ),
+        ]
+    )
+
+
+def _sample_gta_bus_routes() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.4257, 43.7970], [-79.4113, 43.7615], [-79.3941, 43.7276]],
+                route="97 (sample)",
+                name="Yonge",
+                mode="Bus",
+                color=_TTC["streetcar"],
+            ),
+        ]
+    )
+
+
+def _sample_gta_bus_stops() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(-79.3841, 43.6497, stop="Queen St West @ Yonge St (sample)", routes="501"),
+            _point(-79.4113, 43.7615, stop="Yonge St @ Sheppard Ave (sample)", routes="97"),
+        ]
+    )
+
+
+def _sample_gta_go_transit() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.3806, 43.6453], [-79.5851, 43.5860], [-79.6876, 43.5155]],
+                route="Lakeshore West (sample)",
+                mode="GO Rail",
+                color=_GO_LAKESHORE_WEST,
+            ),
+            _point(
+                -79.3806,
+                43.6453,
+                station="Union Station GO (sample)",
+                lines="Lakeshore West",
+                color=_GO_LAKESHORE_WEST,
+            ),
+        ]
+    )
+
+
 def _sample_gta_transit_expansion() -> FeatureCollection:
     return FeatureCollection(
         features=[
@@ -485,6 +658,12 @@ _BUILDERS: dict[str, Callable[[], FeatureCollection]] = {
     "new-highrises": _sample_new_highrises,
     "gta-housing-prices": _sample_gta_housing_prices,
     "gta-demographics": _sample_gta_demographics,
+    "gta-subway-lines": _sample_gta_subway_lines,
+    "gta-subway-stations": _sample_gta_subway_stations,
+    "gta-streetcar-lines": _sample_gta_streetcar_lines,
+    "gta-bus-routes": _sample_gta_bus_routes,
+    "gta-bus-stops": _sample_gta_bus_stops,
+    "gta-go-transit": _sample_gta_go_transit,
     "gta-transit-expansion": _sample_gta_transit_expansion,
     "gta-road-construction": _sample_gta_road_construction,
     "gta-new-highrises": _sample_gta_new_highrises,

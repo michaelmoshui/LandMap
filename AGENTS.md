@@ -23,11 +23,12 @@ with `GET /api/layers?region=`. To add a region or portal, edit SOURCES.md - a
 viewport in `_REGION_VIEWPORTS` for a new region).
 
 Layer data is served from **ingested GeoJSON snapshots** committed under
-`backend/app/data/<region>/` and refreshed with `make ingest-gva` (see
-`backend/app/ingest/`). The GVA layers carry real data pulled from the
-SOURCES.md portals (City of Vancouver Opendatasoft, StatCan census, OSM
-Overpass, TransLink GTFS); layers without a snapshot (currently all of the
-GTA) fall back to built-in sample data. PostGIS wiring is scaffolded for when layers outgrow
+`backend/app/data/<region>/` and refreshed with `make ingest-gva` /
+`make ingest-gta` (see `backend/app/ingest/`). The GVA and GTA layers carry
+real data pulled from the SOURCES.md portals (City of Vancouver Opendatasoft,
+StatCan census, OSM Overpass, TransLink/TTC/GO Transit GTFS); layers without
+a snapshot (the remaining GTA sample layers) fall back to built-in sample
+data. PostGIS wiring is scaffolded for when layers outgrow
 flat files.
 
 ## Architecture (keep this mental model)
@@ -97,6 +98,7 @@ Workflow:
 | End-to-end tests             | `make test-e2e`      |
 | Lint / format                | `make lint` / `make fmt` |
 | Refresh GVA data snapshots   | `make ingest-gva`    |
+| Refresh GTA data snapshots   | `make ingest-gta`    |
 
 ## Definition of done
 

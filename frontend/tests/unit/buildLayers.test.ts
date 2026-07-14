@@ -64,4 +64,20 @@ describe("buildMapLayers", () => {
     const stops = buildMapLayers("bus-stops", "baseline").find((s) => s.type === "circle");
     expect(stops?.paint["circle-color"]).toEqual(["coalesce", ["get", "color"], "#7A99AC"]);
   });
+
+  it("styles the GTA transit layers like their GVA counterparts", () => {
+    const gvaStations = buildMapLayers("skytrain-stations", "baseline").find(
+      (s) => s.type === "circle",
+    );
+    const gtaStations = buildMapLayers("gta-subway-stations", "baseline").find(
+      (s) => s.type === "circle",
+    );
+    expect(gtaStations?.paint).toEqual(gvaStations?.paint);
+
+    const streetcar = buildMapLayers("gta-streetcar-lines", "baseline").find(
+      (s) => s.type === "line",
+    );
+    const subway = buildMapLayers("gta-subway-lines", "baseline").find((s) => s.type === "line");
+    expect(streetcar?.paint["line-width"]).toBeLessThan(subway?.paint["line-width"] as number);
+  });
 });

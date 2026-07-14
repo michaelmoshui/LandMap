@@ -96,6 +96,33 @@ test.describe("LandMap end-to-end", () => {
     expect(req.url()).toContain("/api/layers/skytrain-lines/features");
   });
 
+  test("GTA transit layers serve the TTC and GO networks in official colours", async ({
+    request,
+  }) => {
+    // TTC rapid transit lines carry the official line colours from GTFS.
+    const lines = await (await request.get("/api/layers/gta-subway-lines/features")).json();
+    const colors = new Set(lines.features.map((f: { properties: { color: string } }) => f.properties.color));
+    expect(colors).toContain("#D5C82B"); // Line 1 (Yonge-University)
+    expect(colors).toContain("#008000"); // Line 2 (Bloor - Danforth)
+    expect(colors).toContain("#B300B3"); // Line 4 (Sheppard)
+
+    // Streetcars render as their own layer in TTC red.
+    const streetcars = await (await request.get("/api/layers/gta-streetcar-lines/features")).json();
+    const streetcarColors = new Set(
+      streetcars.features.map((f: { properties: { color: string } }) => f.properties.color),
+    );
+    expect(streetcarColors).toContain("#ED1C24");
+
+    // Stations, the bus network, and GO rail are all populated.
+    const stations = await (await request.get("/api/layers/gta-subway-stations/features")).json();
+    expect(stations.features.length).toBeGreaterThanOrEqual(60);
+    const stops = await (await request.get("/api/layers/gta-bus-stops/features")).json();
+    expect(stops.features.length).toBeGreaterThanOrEqual(5000);
+    const go = await (await request.get("/api/layers/gta-go-transit/features")).json();
+    const goModes = new Set(go.features.map((f: { properties: { mode?: string } }) => f.properties.mode));
+    expect(goModes).toContain("GO Rail");
+  });
+
   test("regions API lists Vancouver and Toronto", async ({ request }) => {
     const resp = await request.get("/api/regions");
     expect(resp.ok()).toBeTruthy();
@@ -126,6 +153,8 @@ test.describe("LandMap end-to-end", () => {
     // The flyout stays open across the region switch and re-renders with GTA layers.
     await page.getByLabel("Region").selectOption("gta");
     await expect(page.getByText("Transit Expansion", { exact: true })).toBeVisible();
+    await expect(page.getByText("Subway Lines", { exact: true })).toBeVisible();
+    await expect(page.getByText("Streetcar Lines", { exact: true })).toBeVisible();
     await expect(page.getByText("SkyTrain Expansion")).not.toBeVisible();
   });
 });

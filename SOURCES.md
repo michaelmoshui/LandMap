@@ -14,6 +14,14 @@ This document aggregates open data catalogs, interactive GIS mapping utilities, 
     *   **Description**: Public repository for historical and current granular municipal planning files, minor variance catalogs, and official plan amendment declarations.
     *   **Endpoint**: [City of Toronto AIC Portal](https://toronto.ca)
 
+### Transit Agency Feeds
+*   **TTC GTFS Static Feed**
+    *   **Description**: The complete TTC network (subway/LRT Lines 1-6, streetcars, buses, stops and the TTC's official route colours) as a GTFS zip from Toronto Open Data. Feeds the GTA `gta-subway-lines`, `gta-subway-stations`, `gta-streetcar-lines`, `gta-bus-routes`, and `gta-bus-stops` layers.
+    *   **Endpoint**: [TTC Routes and Schedules (GTFS)](http://opendata.toronto.ca/toronto.transit.commission/ttc-routes-and-schedules/OpenData_TTC_Schedules.zip)
+*   **GO Transit GTFS Static Feed (Metrolinx)**
+    *   **Description**: GO train and bus network (routes, shapes, stations and Metrolinx's official line colours) as a GTFS zip. Feeds the GTA `gta-go-transit` layer (rail only).
+    *   **Endpoint**: [GO Transit GTFS](https://assets.metrolinx.com/raw/upload/Documents/Metrolinx/Open%20Data/GO-GTFS.zip)
+
 ### Regional Portals & Community Alternatives
 *   **York Region Development Application Dashboard**
     *   **Description**: Unified Esri operations dashboard logging development boundaries, review stages, and processing metrics across northern regional municipalities (Vaughan, Markham, Richmond Hill).

@@ -27,17 +27,37 @@ export interface LayerStyle {
   hollowPoints?: boolean;
 }
 
+// Shared looks for the transit layers in both regions.
+const RAIL_LINES: LayerStyle = { lineWidth: 4.5 };
+const STATIONS: LayerStyle = { hollowPoints: true, circleRadius: 5, circleStrokeWidth: 2.5 };
+const REGIONAL_RAIL: LayerStyle = {
+  lineWidth: 3,
+  hollowPoints: true,
+  circleRadius: 4.5,
+  circleStrokeWidth: 2.5,
+};
+const BUS_ROUTES: LayerStyle = { lineWidth: 1.8, lineOpacity: 0.85 };
+const BUS_STOPS: LayerStyle = {
+  // Neutral map gray-blue for stop dots; they grow as street detail appears.
+  color: "#7A99AC",
+  circleRadius: ["interpolate", ["linear"], ["zoom"], 10, 1.2, 13, 3, 16, 5],
+  circleStrokeWidth: 0.8,
+};
+
 export const LAYER_STYLES: Record<string, LayerStyle> = {
-  "skytrain-lines": { lineWidth: 4.5 },
-  "skytrain-stations": { hollowPoints: true, circleRadius: 5, circleStrokeWidth: 2.5 },
-  "seabus-wce": { lineWidth: 3, hollowPoints: true, circleRadius: 4.5, circleStrokeWidth: 2.5 },
-  "bus-routes": { lineWidth: 1.8, lineOpacity: 0.85 },
-  "bus-stops": {
-    // TransLink's system-map gray-blue; dots grow as street detail appears.
-    color: "#7A99AC",
-    circleRadius: ["interpolate", ["linear"], ["zoom"], 10, 1.2, 13, 3, 16, 5],
-    circleStrokeWidth: 0.8,
-  },
+  // Greater Vancouver Area (TransLink)
+  "skytrain-lines": RAIL_LINES,
+  "skytrain-stations": STATIONS,
+  "seabus-wce": REGIONAL_RAIL,
+  "bus-routes": BUS_ROUTES,
+  "bus-stops": BUS_STOPS,
+  // Greater Toronto Area (TTC + GO Transit)
+  "gta-subway-lines": RAIL_LINES,
+  "gta-subway-stations": STATIONS,
+  "gta-streetcar-lines": { lineWidth: 2.2 },
+  "gta-bus-routes": BUS_ROUTES,
+  "gta-bus-stops": BUS_STOPS,
+  "gta-go-transit": REGIONAL_RAIL,
 };
 
 export function styleForLayer(layerId: string): LayerStyle {

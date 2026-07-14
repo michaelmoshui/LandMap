@@ -6,7 +6,7 @@ import type { DataSource, LayerMeta, RegionMeta } from "../api/types";
 const GROUP_DEFS = [
   { id: "housing", label: "Housing", icon: "🏠", matches: /housing/ },
   { id: "demographics", label: "People", icon: "👥", matches: /demographic/ },
-  { id: "transit", label: "Transit", icon: "🚇", matches: /transit|skytrain|bus|seabus/ },
+  { id: "transit", label: "Transit", icon: "🚇", matches: /transit|skytrain|subway|streetcar|bus/ },
   { id: "roads", label: "Roads", icon: "🚧", matches: /road/ },
   { id: "development", label: "Projects", icon: "🏗️", matches: /highrise|high-rise/ },
   { id: "boundaries", label: "Boundaries", icon: "🗺️", matches: /boundar/ },

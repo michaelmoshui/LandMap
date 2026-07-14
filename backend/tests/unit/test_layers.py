@@ -29,6 +29,12 @@ EXPECTED_GVA_LAYER_IDS = {
 EXPECTED_GTA_LAYER_IDS = {
     "gta-housing-prices",
     "gta-demographics",
+    "gta-subway-lines",
+    "gta-subway-stations",
+    "gta-streetcar-lines",
+    "gta-bus-routes",
+    "gta-bus-stops",
+    "gta-go-transit",
     "gta-transit-expansion",
     "gta-road-construction",
     "gta-new-highrises",
