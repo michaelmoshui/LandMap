@@ -24,6 +24,21 @@ def _request_json(url: str, body: bytes | None, timeout: float) -> Any:
         return json.load(response)
 
 
+def get_bytes(url: str, *, timeout: float = 300.0) -> bytes:
+    """GET a binary document (e.g. a GTFS zip), retrying transient failures."""
+    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    last_error: Exception | None = None
+    for attempt in range(_RETRIES + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
+                return response.read()
+        except Exception as exc:  # noqa: BLE001 - retry any transport error
+            last_error = exc
+            if attempt < _RETRIES:
+                time.sleep(_BACKOFF_SECONDS * (attempt + 1))
+    raise RuntimeError(f"GET {url} failed after {_RETRIES + 1} attempts: {last_error}")
+
+
 def get_json(url: str, params: dict[str, str] | None = None, *, timeout: float = 90.0) -> Any:
     """GET a JSON document, retrying transient failures with backoff."""
     if params:

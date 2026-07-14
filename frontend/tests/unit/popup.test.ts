@@ -27,6 +27,13 @@ describe("popupHtml", () => {
     expect(html).not.toContain("<th>source</th>");
   });
 
+  it("hides the rendering-only color property", () => {
+    const html = popupHtml({ route: "Expo Line", color: "#0033A0" });
+    expect(html).toContain("Expo Line");
+    expect(html).not.toContain("#0033A0");
+    expect(html).not.toContain("<th>color</th>");
+  });
+
   it("escapes HTML in keys and values", () => {
     const html = popupHtml({ "<b>": '"><script>alert(1)</script>' });
     expect(html).not.toContain("<script>");

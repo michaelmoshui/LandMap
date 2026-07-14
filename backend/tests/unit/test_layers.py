@@ -14,6 +14,11 @@ from app.services import layers as layers_service
 EXPECTED_GVA_LAYER_IDS = {
     "housing-prices",
     "demographics",
+    "skytrain-lines",
+    "skytrain-stations",
+    "bus-routes",
+    "bus-stops",
+    "seabus-wce",
     "skytrain-expansion",
     "road-construction",
     "new-highrises",

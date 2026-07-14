@@ -26,8 +26,8 @@ Layer data is served from **ingested GeoJSON snapshots** committed under
 `backend/app/data/<region>/` and refreshed with `make ingest-gva` (see
 `backend/app/ingest/`). The GVA layers carry real data pulled from the
 SOURCES.md portals (City of Vancouver Opendatasoft, StatCan census, OSM
-Overpass); layers without a snapshot (currently all of the GTA) fall back to
-built-in sample data. PostGIS wiring is scaffolded for when layers outgrow
+Overpass, TransLink GTFS); layers without a snapshot (currently all of the
+GTA) fall back to built-in sample data. PostGIS wiring is scaffolded for when layers outgrow
 flat files.
 
 ## Architecture (keep this mental model)

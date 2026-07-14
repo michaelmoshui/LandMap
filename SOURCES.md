@@ -44,6 +44,9 @@ This document aggregates open data catalogs, interactive GIS mapping utilities, 
 *   **Statistics Canada 2021 Census (via Esri Canada FeatureServer)**
     *   **Description**: Population and dwelling counts per census subdivision, republished by Esri Canada as a queryable public ArcGIS FeatureServer. Feeds the GVA `demographics` layer (Metro Vancouver CSDs, `CSDUID LIKE '5915%'`).
     *   **Endpoint**: [Canadian Population and Dwelling Counts 2021](https://services.arcgis.com/wjcPoefzjpzCgffS/arcgis/rest/services/Canadian_Population_and_Dwelling_Counts_2021/FeatureServer)
+*   **TransLink GTFS Static Feed**
+    *   **Description**: The complete Metro Vancouver transit network (routes, shapes, stops, stations and TransLink's official route colours) as a GTFS zip, refreshed with each service change. Feeds the GVA `skytrain-lines`, `skytrain-stations`, `bus-routes`, `bus-stops`, and `seabus-wce` layers.
+    *   **Endpoint**: [TransLink GTFS Static](https://gtfs-static.translink.ca/gtfs/google_transit.zip)
 *   **OpenStreetMap (Overpass API)**
     *   **Description**: Community-maintained geodata under ODbL. Carries the under-construction SkyTrain alignments and station sites (Broadway Extension, Surrey-Langley) that no government portal exposes as open GIS layers; queried via Overpass. Feeds the GVA `skytrain-expansion` layer.
     *   **Endpoint**: [Overpass API](https://overpass-api.de/api/interpreter)

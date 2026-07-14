@@ -15,6 +15,11 @@ test.describe("LandMap end-to-end", () => {
     const ids = layers.map((l) => l.id);
     expect(ids).toContain("housing-prices");
     expect(ids).toContain("skytrain-expansion");
+    expect(ids).toContain("skytrain-lines");
+    expect(ids).toContain("skytrain-stations");
+    expect(ids).toContain("bus-routes");
+    expect(ids).toContain("bus-stops");
+    expect(ids).toContain("seabus-wce");
   });
 
   test("frontend loads and shows the layer toolbar", async ({ page }) => {
@@ -50,6 +55,45 @@ test.describe("LandMap end-to-end", () => {
       (f: { properties: { municipality: string } }) => f.properties.municipality === "Vancouver",
     );
     expect(vancouver.properties.population_2021).toBeGreaterThan(500000);
+  });
+
+  test("transit layers serve the TransLink network in official colours", async ({ request }) => {
+    // SkyTrain lines carry TransLink's official route colours from GTFS.
+    const lines = await (await request.get("/api/layers/skytrain-lines/features")).json();
+    const colors = new Set(lines.features.map((f: { properties: { color: string } }) => f.properties.color));
+    expect(colors).toContain("#0033A0"); // Expo Line
+    expect(colors).toContain("#FFCD00"); // Millennium Line
+    expect(colors).toContain("#007C9F"); // Canada Line
+
+    // Stations include the interchange hub and name the lines serving it.
+    const stations = await (await request.get("/api/layers/skytrain-stations/features")).json();
+    const waterfront = stations.features.find(
+      (f: { properties: { station: string } }) => f.properties.station === "Waterfront Station",
+    );
+    expect(waterfront).toBeTruthy();
+
+    // The full bus network: hundreds of routes, thousands of stops.
+    const routes = await (await request.get("/api/layers/bus-routes/features")).json();
+    expect(routes.features.length).toBeGreaterThanOrEqual(200);
+    const stops = await (await request.get("/api/layers/bus-stops/features")).json();
+    expect(stops.features.length).toBeGreaterThanOrEqual(5000);
+
+    // SeaBus & West Coast Express render as their own layer.
+    const seabus = await (await request.get("/api/layers/seabus-wce/features")).json();
+    const modes = new Set(seabus.features.map((f: { properties: { mode?: string } }) => f.properties.mode));
+    expect(modes).toContain("Ferry");
+    expect(modes).toContain("Commuter Rail");
+  });
+
+  test("toggling SkyTrain lines from the Transit flyout requests its features", async ({ page }) => {
+    const featuresRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/layers/skytrain-lines/features"),
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: "Transit" }).click();
+    await page.getByText("SkyTrain Lines", { exact: true }).click();
+    const req = await featuresRequest;
+    expect(req.url()).toContain("/api/layers/skytrain-lines/features");
   });
 
   test("regions API lists Vancouver and Toronto", async ({ request }) => {

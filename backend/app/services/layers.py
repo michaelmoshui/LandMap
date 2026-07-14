@@ -49,6 +49,56 @@ _LAYERS: list[LayerMeta] = [
         region="gva",
     ),
     LayerMeta(
+        id="skytrain-lines",
+        title="SkyTrain Lines",
+        description=(
+            "SkyTrain routes (Expo, Millennium and Canada Line) in TransLink's "
+            "official line colours. Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="skytrain-stations",
+        title="SkyTrain Stations",
+        description=(
+            "SkyTrain stations with the lines serving each. Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="bus-routes",
+        title="Bus Routes",
+        description=(
+            "All TransLink bus routes in TransLink's colours (RapidBus green, "
+            "99 B-Line orange, local routes gray-blue). "
+            "Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="bus-stops",
+        title="Bus Stops",
+        description=(
+            "Every TransLink bus stop with the routes serving it. "
+            "Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="seabus-wce",
+        title="SeaBus & West Coast Express",
+        description=(
+            "SeaBus and West Coast Express routes and stations in TransLink's "
+            "official colours. Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
         id="skytrain-expansion",
         title="SkyTrain Expansion",
         description=(
@@ -170,6 +220,123 @@ def _sample_demographics() -> FeatureCollection:
             _point(-123.1207, 49.2827, area="Downtown Vancouver", population=62000, density=18000),
             _point(-122.7969, 49.2057, area="Surrey Central", population=51000, density=6200),
             _point(-123.0000, 49.2500, area="Burnaby Metrotown", population=42000, density=9100),
+        ]
+    )
+
+
+def _line(coords: list[list[float]], **props: object) -> Feature:
+    return Feature(geometry={"type": "LineString", "coordinates": coords}, properties=dict(props))
+
+
+# TransLink's official route colours (from its GTFS feed's route_color column).
+_TRANSLINK = {
+    "expo": "#0033A0",
+    "millennium": "#FFCD00",
+    "canada": "#007C9F",
+    "seabus": "#746661",
+    "wce": "#87189D",
+    "rapidbus": "#008522",
+}
+
+
+def _sample_skytrain_lines() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-123.1119, 49.2856], [-123.0121, 49.2258], [-122.8491, 49.2258]],
+                route="Expo Line (sample)",
+                mode="SkyTrain",
+                color=_TRANSLINK["expo"],
+            ),
+            _line(
+                [[-123.0779, 49.2632], [-122.9411, 49.2610], [-122.7947, 49.2758]],
+                route="Millennium Line (sample)",
+                mode="SkyTrain",
+                color=_TRANSLINK["millennium"],
+            ),
+            _line(
+                [[-123.1119, 49.2856], [-123.1163, 49.2094], [-123.1365, 49.1666]],
+                route="Canada Line (sample)",
+                mode="SkyTrain",
+                color=_TRANSLINK["canada"],
+            ),
+        ]
+    )
+
+
+def _sample_skytrain_stations() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(
+                -123.1119,
+                49.2856,
+                station="Waterfront Station (sample)",
+                lines="Canada Line, Expo Line",
+                color="#333333",
+            ),
+            _point(
+                -123.0121,
+                49.2258,
+                station="Metrotown Station (sample)",
+                lines="Expo Line",
+                color=_TRANSLINK["expo"],
+            ),
+        ]
+    )
+
+
+def _sample_bus_routes() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-123.1140, 49.2634], [-123.0568, 49.2626], [-122.9990, 49.2610]],
+                route="99 (sample)",
+                name="Broadway B-Line",
+                mode="Bus",
+                color="#D04110",
+            ),
+            _line(
+                [[-122.8491, 49.1913], [-122.8449, 49.1044]],
+                route="R1 (sample)",
+                name="King George Blvd",
+                mode="Bus",
+                color=_TRANSLINK["rapidbus"],
+            ),
+        ]
+    )
+
+
+def _sample_bus_stops() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(-123.1140, 49.2634, stop="W Broadway @ Cambie St (sample)", routes="9, 99"),
+            _point(-122.8491, 49.1913, stop="King George Stn Bay 1 (sample)", routes="R1, 321"),
+        ]
+    )
+
+
+def _sample_seabus_wce() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-123.1113, 49.2866], [-123.0829, 49.3095]],
+                route="SeaBus (sample)",
+                mode="Ferry",
+                color=_TRANSLINK["seabus"],
+            ),
+            _line(
+                [[-123.1119, 49.2856], [-122.8465, 49.2830], [-122.6055, 49.2172]],
+                route="West Coast Express (sample)",
+                mode="Commuter Rail",
+                color=_TRANSLINK["wce"],
+            ),
+            _point(
+                -123.0829,
+                49.3095,
+                station="Lonsdale Quay (sample)",
+                lines="SeaBus",
+                color=_TRANSLINK["seabus"],
+            ),
         ]
     )
 
@@ -308,6 +475,11 @@ def _neighborhood_boundaries() -> FeatureCollection:
 _BUILDERS: dict[str, Callable[[], FeatureCollection]] = {
     "housing-prices": _sample_housing_prices,
     "demographics": _sample_demographics,
+    "skytrain-lines": _sample_skytrain_lines,
+    "skytrain-stations": _sample_skytrain_stations,
+    "bus-routes": _sample_bus_routes,
+    "bus-stops": _sample_bus_stops,
+    "seabus-wce": _sample_seabus_wce,
     "skytrain-expansion": _sample_skytrain_expansion,
     "road-construction": _sample_road_construction,
     "new-highrises": _sample_new_highrises,

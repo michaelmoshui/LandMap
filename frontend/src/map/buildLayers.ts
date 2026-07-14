@@ -1,5 +1,5 @@
 import type { LayerCategory } from "../api/types";
-import { colorForCategory } from "./layerStyles";
+import { colorForCategory, styleForLayer } from "./layerStyles";
 
 // Pure helpers for translating a LandMap layer into MapLibre style layers.
 // Kept separate from the React/MapLibre glue so they are unit-testable.
@@ -24,12 +24,15 @@ function geometryFilter(...types: string[]): unknown[] {
 
 /**
  * Build the MapLibre layer specs needed to render a LandMap layer. Polygons
- * render as translucent fills, lines as strokes, points as circles; all
- * colored by category. Fills come first so points/lines stack above them.
+ * render as translucent fills, lines as strokes, points as circles. Features
+ * carrying a `color` property (e.g. TransLink route colours) use it; the rest
+ * fall back to the layer's style color or its category color. Fills come
+ * first so points/lines stack above them.
  */
 export function buildMapLayers(layerId: string, category: LayerCategory): MapLayerSpec[] {
   const source = sourceIdFor(layerId);
-  const color = colorForCategory(category);
+  const style = styleForLayer(layerId);
+  const color = ["coalesce", ["get", "color"], style.color ?? colorForCategory(category)];
   return [
     {
       id: `${layerId}-fills`,
@@ -49,7 +52,8 @@ export function buildMapLayers(layerId: string, category: LayerCategory): MapLay
       filter: geometryFilter("LineString", "MultiLineString"),
       paint: {
         "line-color": color,
-        "line-width": 4,
+        "line-width": style.lineWidth ?? 4,
+        "line-opacity": style.lineOpacity ?? 1,
       },
     },
     {
@@ -58,10 +62,10 @@ export function buildMapLayers(layerId: string, category: LayerCategory): MapLay
       source,
       filter: geometryFilter("Point", "MultiPoint"),
       paint: {
-        "circle-radius": 6,
-        "circle-color": color,
-        "circle-stroke-width": 2,
-        "circle-stroke-color": "#ffffff",
+        "circle-radius": style.circleRadius ?? 6,
+        "circle-color": style.hollowPoints ? "#ffffff" : color,
+        "circle-stroke-width": style.circleStrokeWidth ?? 2,
+        "circle-stroke-color": style.hollowPoints ? color : "#ffffff",
       },
     },
   ];
