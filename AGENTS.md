@@ -22,9 +22,13 @@ with `GET /api/layers?region=`. To add a region or portal, edit SOURCES.md - a
 `**Description**`/`**Endpoint**` fields is all the parser needs (add a
 viewport in `_REGION_VIEWPORTS` for a new region).
 
-The current codebase is a **scaffold**: the plumbing (map, API, DB, tests,
-containers) is in place with sample data. Real ingestion from the SOURCES.md
-portals comes later.
+Layer data is served from **ingested GeoJSON snapshots** committed under
+`backend/app/data/<region>/` and refreshed with `make ingest-gva` (see
+`backend/app/ingest/`). The GVA layers carry real data pulled from the
+SOURCES.md portals (City of Vancouver Opendatasoft, StatCan census, OSM
+Overpass); layers without a snapshot (currently all of the GTA) fall back to
+built-in sample data. PostGIS wiring is scaffolded for when layers outgrow
+flat files.
 
 ## Architecture (keep this mental model)
 
@@ -92,6 +96,7 @@ Workflow:
 | Frontend unit tests          | `make test-frontend` |
 | End-to-end tests             | `make test-e2e`      |
 | Lint / format                | `make lint` / `make fmt` |
+| Refresh GVA data snapshots   | `make ingest-gva`    |
 
 ## Definition of done
 

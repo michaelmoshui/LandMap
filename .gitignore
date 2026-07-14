@@ -34,6 +34,8 @@ blob-report/
 
 # Docker / data volumes
 data/
+# ...but ingested layer snapshots are real content, not a volume (see app/ingest).
+!backend/app/data/
 pgdata/
 caddy_data/
 caddy_config/

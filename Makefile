@@ -25,6 +25,7 @@ help: ## Show this help
 	@echo   make test-e2e      Run end-to-end tests with Playwright
 	@echo   make lint          Lint backend and frontend
 	@echo   make fmt           Auto-format backend and frontend
+	@echo   make ingest-gva    Refresh GVA data snapshots from the open-data portals
 	@echo   make clean         Stop everything and remove volumes
 
 # ---- Run ----------------------------------------------------------------
@@ -97,6 +98,13 @@ test-frontend: ## Frontend unit tests (Vitest)
 test-e2e: ## End-to-end tests (Playwright over the full stack)
 	$(COMPOSE_E2E) up --build --abort-on-container-exit --exit-code-from e2e
 	$(COMPOSE_E2E) down -v
+
+# ---- Data ingestion ------------------------------------------------------
+# Uses the dev compose file because it bind-mounts backend/app, so the
+# refreshed snapshots in app/data/ land in the repo (commit them afterwards).
+.PHONY: ingest-gva
+ingest-gva: ## Refresh GVA layer snapshots from the open-data portals
+	$(COMPOSE_DEV) run --rm --build --no-deps backend python -m app.ingest.gva
 
 # ---- Quality ------------------------------------------------------------
 .PHONY: lint

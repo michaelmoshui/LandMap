@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # bind-mount the repo's SOURCES.md to /app/SOURCES.md (the workdir).
     sources_path: str = "SOURCES.md"
 
+    # Directory holding ingested GeoJSON snapshots (<data_dir>/<region>/<layer>.geojson).
+    # Relative to the workdir: resolves to backend/app/data on the host and
+    # /app/app/data in the container; `app.ingest.*` writes here too.
+    data_dir: str = "app/data"
+
     # CORS: comma-separated origins, e.g. "http://localhost,http://localhost:5173".
     # NoDecode stops pydantic-settings from JSON-parsing the env value so our
     # validator below can split the plain comma-separated string.

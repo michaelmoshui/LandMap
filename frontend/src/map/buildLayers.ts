@@ -10,40 +10,58 @@ export function sourceIdFor(layerId: string): string {
 
 export interface MapLayerSpec {
   id: string;
-  type: "circle" | "line";
+  type: "circle" | "line" | "fill";
   source: string;
   filter: unknown[];
   paint: Record<string, unknown>;
 }
 
+// MapLibre's geometry-type expression can report Multi* variants, so every
+// filter matches both the singular and Multi form.
+function geometryFilter(...types: string[]): unknown[] {
+  return ["in", ["geometry-type"], ["literal", types]];
+}
+
 /**
- * Build the MapLibre layer specs needed to render a LandMap layer. Points render
- * as circles, lines as strokes; both colored by category.
+ * Build the MapLibre layer specs needed to render a LandMap layer. Polygons
+ * render as translucent fills, lines as strokes, points as circles; all
+ * colored by category. Fills come first so points/lines stack above them.
  */
 export function buildMapLayers(layerId: string, category: LayerCategory): MapLayerSpec[] {
   const source = sourceIdFor(layerId);
   const color = colorForCategory(category);
   return [
     {
-      id: `${layerId}-points`,
-      type: "circle",
+      id: `${layerId}-fills`,
+      type: "fill",
       source,
-      filter: ["==", ["geometry-type"], "Point"],
+      filter: geometryFilter("Polygon", "MultiPolygon"),
       paint: {
-        "circle-radius": 6,
-        "circle-color": color,
-        "circle-stroke-width": 2,
-        "circle-stroke-color": "#ffffff",
+        "fill-color": color,
+        "fill-opacity": 0.18,
+        "fill-outline-color": color,
       },
     },
     {
       id: `${layerId}-lines`,
       type: "line",
       source,
-      filter: ["==", ["geometry-type"], "LineString"],
+      filter: geometryFilter("LineString", "MultiLineString"),
       paint: {
         "line-color": color,
         "line-width": 4,
+      },
+    },
+    {
+      id: `${layerId}-points`,
+      type: "circle",
+      source,
+      filter: geometryFilter("Point", "MultiPoint"),
+      paint: {
+        "circle-radius": 6,
+        "circle-color": color,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
       },
     },
   ];

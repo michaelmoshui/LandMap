@@ -10,6 +10,24 @@ Each entry records:
 
 ---
 
+## BUG-010: Ingested GeoJSON snapshots silently absent from git (`data/` ignore rule)
+
+- **Symptoms**
+  - `backend/app/data/gva/*.geojson` exists and is served locally, but never
+    shows up in `git status`, so a fresh clone (and any Docker image built in
+    CI) would quietly fall back to sample data with no error.
+- **Root cause**
+  - `.gitignore` has a bare `data/` rule meant for Docker *volume* mounts,
+    which matches **any** directory named `data` at any depth - including the
+    committed layer snapshots under `backend/app/data/`.
+- **Fix**
+  - Added `!backend/app/data/` right below the `data/` rule.
+  - When adding new generated-but-committed artifacts, run
+    `git check-ignore -v <path>` to confirm they are actually trackable;
+    "no diff" after creating files is a red flag, not a success.
+
+---
+
 ## BUG-009: `make dev` fails with `address already in use` on :5173 (host Vite survives `make down`)
 
 - **Symptoms**

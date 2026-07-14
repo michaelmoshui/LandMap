@@ -7,21 +7,33 @@ describe("buildMapLayers", () => {
     expect(sourceIdFor("housing-prices")).toBe("landmap-src-housing-prices");
   });
 
-  it("creates point and line layers bound to the layer source", () => {
+  it("creates fill, line, and point layers bound to the layer source", () => {
     const specs = buildMapLayers("skytrain-expansion", "planned");
-    expect(specs).toHaveLength(2);
+    expect(specs).toHaveLength(3);
+    // Fills first so lines/points render above polygon layers.
     expect(specs.map((s) => s.id)).toEqual([
-      "skytrain-expansion-points",
+      "skytrain-expansion-fills",
       "skytrain-expansion-lines",
+      "skytrain-expansion-points",
     ]);
     for (const spec of specs) {
       expect(spec.source).toBe("landmap-src-skytrain-expansion");
     }
   });
 
+  it("matches Multi* geometry variants in filters", () => {
+    const specs = buildMapLayers("demographics", "baseline");
+    const fill = specs.find((s) => s.type === "fill");
+    expect(fill?.filter).toEqual(["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]]);
+  });
+
   it("colors baseline and planned layers differently", () => {
-    const baseline = buildMapLayers("demographics", "baseline");
-    const planned = buildMapLayers("road-construction", "planned");
-    expect(baseline[0].paint["circle-color"]).not.toBe(planned[0].paint["circle-color"]);
+    const baselinePoints = buildMapLayers("demographics", "baseline").find(
+      (s) => s.type === "circle",
+    );
+    const plannedPoints = buildMapLayers("road-construction", "planned").find(
+      (s) => s.type === "circle",
+    );
+    expect(baselinePoints?.paint["circle-color"]).not.toBe(plannedPoints?.paint["circle-color"]);
   });
 });

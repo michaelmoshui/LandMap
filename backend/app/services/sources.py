@@ -90,9 +90,7 @@ def parse_sources_md(text: str) -> tuple[list[RegionMeta], list[DataSource]]:
             if all(r.id != region_id for r in regions):
                 center, zoom = _viewport(region_id)
                 regions.append(
-                    RegionMeta(
-                        id=region_id, title=_region_title(heading), center=center, zoom=zoom
-                    )
+                    RegionMeta(id=region_id, title=_region_title(heading), center=center, zoom=zoom)
                 )
             sources.append(
                 DataSource(

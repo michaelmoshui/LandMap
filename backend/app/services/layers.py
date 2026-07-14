@@ -1,18 +1,26 @@
 """Layer registry and data access.
 
 Layers are grouped by region (see ``app.services.sources`` for the region
-catalog parsed from SOURCES.md). Currently returns hand-made sample data for
-the Greater Vancouver Area (``gva``) and Greater Toronto Area (``gta``).
-Replace the ``_sample_*`` builders with PostGIS-backed queries as real datasets
-are ingested from the portals in SOURCES.md (see SKILL.md -> "Wire a layer to
-real PostGIS data").
+catalog parsed from SOURCES.md). Feature data comes from GeoJSON snapshots
+under ``settings.data_dir`` (written by the ``app.ingest.*`` scripts pulling
+from the portals in SOURCES.md); layers without a snapshot fall back to the
+hand-made ``_sample_*`` builders so the app keeps working before ingestion
+has run. Move hot layers into PostGIS-backed queries as they outgrow flat
+files (see SKILL.md -> "Wire a layer to real PostGIS data").
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
+from pathlib import Path
 
+from pydantic import ValidationError
+
+from app.core.config import settings
 from app.schemas.layers import Feature, FeatureCollection, LayerMeta
+
+logger = logging.getLogger(__name__)
 
 # --- Layer metadata registry ----------------------------------------------
 
@@ -21,35 +29,51 @@ _LAYERS: list[LayerMeta] = [
     LayerMeta(
         id="housing-prices",
         title="Housing Prices",
-        description="Assessed/market housing values by area (sample data).",
+        description=(
+            "Average assessed property values by Vancouver local area, split into "
+            "strata (condo) and land parcels. Source: City of Vancouver property "
+            "tax report."
+        ),
         category="baseline",
         region="gva",
     ),
     LayerMeta(
         id="demographics",
         title="Demographics",
-        description="Population and household characteristics by area (sample data).",
+        description=(
+            "2021 Census population, dwellings, and density by Metro Vancouver "
+            "municipality. Source: Statistics Canada."
+        ),
         category="baseline",
         region="gva",
     ),
     LayerMeta(
         id="skytrain-expansion",
         title="SkyTrain Expansion",
-        description="Planned transit line extensions and new stations (sample data).",
+        description=(
+            "SkyTrain lines under construction (Broadway Extension, Surrey-Langley) "
+            "and their future stations. Source: OpenStreetMap contributors (ODbL)."
+        ),
         category="planned",
         region="gva",
     ),
     LayerMeta(
         id="road-construction",
         title="Road Construction",
-        description="Upcoming and active road/infrastructure projects (sample data).",
+        description=(
+            "Road projects under construction and upcoming in Vancouver. "
+            "Source: City of Vancouver Road Ahead."
+        ),
         category="planned",
         region="gva",
     ),
     LayerMeta(
         id="new-highrises",
         title="New High-Rises",
-        description="Approved and proposed high-rise developments (sample data).",
+        description=(
+            "New residential buildings worth $20M+ with permits issued since 2023. "
+            "Source: City of Vancouver issued building permits."
+        ),
         category="planned",
         region="gva",
     ),
@@ -272,7 +296,31 @@ _BUILDERS: dict[str, Callable[[], FeatureCollection]] = {
 }
 
 
+def _snapshot_path(layer: LayerMeta) -> Path:
+    return Path(settings.data_dir) / layer.region / f"{layer.id}.geojson"
+
+
+def _load_snapshot(layer: LayerMeta) -> FeatureCollection | None:
+    """Load a layer's ingested GeoJSON snapshot, or None if absent/invalid."""
+    path = _snapshot_path(layer)
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return None  # No snapshot ingested yet: caller falls back to samples.
+    try:
+        return FeatureCollection.model_validate_json(raw)
+    except ValidationError:
+        logger.warning("Ignoring invalid snapshot %s; serving sample data.", path)
+        return None
+
+
 def get_features(layer_id: str) -> FeatureCollection | None:
-    """Return the FeatureCollection for a layer, or None if unknown."""
+    """Return the FeatureCollection for a layer, or None if unknown.
+
+    Ingested snapshots (see ``app.ingest``) win over the sample builders.
+    """
+    layer = get_layer(layer_id)
+    if layer and (snapshot := _load_snapshot(layer)):
+        return snapshot
     builder = _BUILDERS.get(layer_id)
     return builder() if builder else None

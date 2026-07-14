@@ -6,6 +6,7 @@ import { fetchLayerFeatures } from "../api/client";
 import type { LayerMeta, RegionMeta } from "../api/types";
 import { buildMapLayers, sourceIdFor } from "../map/buildLayers";
 import { DEFAULT_ZOOM, OSM_STYLE, VANCOUVER_CENTER } from "../map/layerStyles";
+import { popupHtml } from "../map/popup";
 
 interface MapViewProps {
   layers: LayerMeta[];
@@ -31,6 +32,18 @@ export default function MapView({ layers, active, region }: MapViewProps) {
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     map.on("load", () => {
       loadedRef.current = true;
+    });
+    // One shared click handler: show the top feature of any active layer.
+    map.on("click", (e) => {
+      const layerIds = [...addedRef.current].filter((id) => map.getLayer(id));
+      if (layerIds.length === 0) return;
+      const features = map.queryRenderedFeatures(e.point, { layers: layerIds });
+      const properties = features[0]?.properties;
+      if (!properties) return;
+      new maplibregl.Popup({ maxWidth: "320px" })
+        .setLngLat(e.lngLat)
+        .setHTML(popupHtml(properties))
+        .addTo(map);
     });
     mapRef.current = map;
     return () => {

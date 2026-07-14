@@ -33,6 +33,22 @@ test.describe("LandMap end-to-end", () => {
     expect(req.url()).toContain("/api/layers/housing-prices/features");
   });
 
+  test("GVA layers serve ingested real data", async ({ request }) => {
+    // housing-prices: one polygon per Vancouver local area with assessed values.
+    const housing = await (await request.get("/api/layers/housing-prices/features")).json();
+    expect(housing.features.length).toBeGreaterThanOrEqual(20);
+    const housingProps = housing.features[0].properties;
+    expect(housingProps).toHaveProperty("area");
+    expect(housingProps).toHaveProperty("strata_avg_value");
+
+    // demographics: census population per Metro Vancouver municipality.
+    const demo = await (await request.get("/api/layers/demographics/features")).json();
+    const vancouver = demo.features.find(
+      (f: { properties: { municipality: string } }) => f.properties.municipality === "Vancouver",
+    );
+    expect(vancouver.properties.population_2021).toBeGreaterThan(500000);
+  });
+
   test("regions API lists Vancouver and Toronto", async ({ request }) => {
     const resp = await request.get("/api/regions");
     expect(resp.ok()).toBeTruthy();
