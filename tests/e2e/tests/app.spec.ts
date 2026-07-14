@@ -17,9 +17,11 @@ test.describe("LandMap end-to-end", () => {
     expect(ids).toContain("skytrain-expansion");
   });
 
-  test("frontend loads and shows the layer panel", async ({ page }) => {
+  test("frontend loads and shows the layer toolbar", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "LandMap" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Housing" })).toBeVisible();
+    await page.getByRole("button", { name: "Housing" }).click();
     await expect(page.getByText("Housing Prices")).toBeVisible();
   });
 
@@ -28,6 +30,7 @@ test.describe("LandMap end-to-end", () => {
       req.url().includes("/api/layers/housing-prices/features"),
     );
     await page.goto("/");
+    await page.getByRole("button", { name: "Housing" }).click();
     await page.getByText("Housing Prices").click();
     const req = await featuresRequest;
     expect(req.url()).toContain("/api/layers/housing-prices/features");
@@ -74,7 +77,9 @@ test.describe("LandMap end-to-end", () => {
 
   test("switching to Toronto shows GTA layers", async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("button", { name: "Transit" }).click();
     await expect(page.getByText("SkyTrain Expansion")).toBeVisible();
+    // The flyout stays open across the region switch and re-renders with GTA layers.
     await page.getByLabel("Region").selectOption("gta");
     await expect(page.getByText("Transit Expansion", { exact: true })).toBeVisible();
     await expect(page.getByText("SkyTrain Expansion")).not.toBeVisible();

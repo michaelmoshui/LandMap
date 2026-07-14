@@ -10,6 +10,29 @@ Each entry records:
 
 ---
 
+## BUG-012: Centered bottom toolbar wrapped onto two rows despite fitting the viewport
+
+- **Symptoms**
+  - The bottom toolbar (`.toolbar`, introduced with the Cities-Skylines-style
+    layer bar) wrapped its last button onto a second row even though the bar's
+    content (~740px) was far narrower than the viewport (1440px).
+- **Root cause**
+  - The bar is absolutely positioned and centered with `left: 50%` +
+    `translateX(-50%)`. An absolutely positioned box's shrink-to-fit width is
+    computed against the space from its `left` offset to the containing block's
+    right edge - here only 50vw - *before* the transform recenters it. With
+    `flex-wrap: wrap`, content wider than 50vw wrapped even though the final
+    (transformed) position had room.
+- **Fix**
+  - Give the bar `width: max-content` (with `max-width: calc(100vw - 16px)` as
+    the genuine-overflow guard) so its width comes from content, not from the
+    shrink-to-fit constraint.
+  - Lesson: `left: 50%` + `translateX(-50%)` centering limits an absolutely
+    positioned element's automatic width to half its container; pair it with
+    `width: max-content`/`fit-content` when the element must size to content.
+
+---
+
 ## BUG-011: Selecting a boundary dimmed an arbitrary-looking patchwork of areas
 
 - **Symptoms**
