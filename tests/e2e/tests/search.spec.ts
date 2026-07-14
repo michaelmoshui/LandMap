@@ -45,6 +45,7 @@ test.describe("Boundary search and selection", () => {
       req.url().includes("/api/layers/neighborhood-boundaries/features"),
     );
     await page.goto("/");
+    await page.getByRole("button", { name: "Boundaries" }).click();
     await page.getByText("Neighborhood Boundaries").click();
     await featuresRequest;
   });
@@ -62,7 +63,9 @@ test.describe("Boundary search and selection", () => {
     await page.getByTestId("search-result").filter({ hasText: "Kerrisdale" }).click();
     await layerRequest;
 
+    await page.getByRole("button", { name: "Boundaries" }).click();
     await expect(page.getByRole("checkbox", { name: "Neighborhood Boundaries" })).toBeChecked();
+    await page.keyboard.press("Escape");
 
     const selected = page.getByTestId("selected-boundary");
     await expect(selected).toHaveCount(1);

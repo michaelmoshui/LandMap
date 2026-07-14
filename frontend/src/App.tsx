@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { fetchLayers, fetchRegions, fetchSources } from "./api/client";
 import type { BoundarySummary, DataSource, LayerMeta, RegionMeta } from "./api/types";
-import LayerPanel from "./components/LayerPanel";
+import BottomBar from "./components/BottomBar";
 import MapView from "./components/MapView";
 import SearchPanel from "./components/SearchPanel";
 import { BOUNDARY_LAYER_BY_KIND } from "./map/boundaryLayers";
@@ -85,7 +85,7 @@ export default function App() {
         selections={selections}
         onBoundaryToggle={toggleBoundary}
       />
-      <LayerPanel
+      <BottomBar
         layers={layers}
         active={active}
         onToggle={toggle}
