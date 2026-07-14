@@ -1,6 +1,6 @@
 # Canadian Municipal Geospatial Data Portals
 
-This document aggregates verified open data catalogs, interactive GIS mapping utilities, and spatial repositories for major metropolitan regions across Canada. 
+This document aggregates open data catalogs, interactive GIS mapping utilities, and spatial repositories for major metropolitan regions across Canada. Entries are starting points, not all individually verified; the exception is the "Endpoints used by LandMap" section below, whose URLs are verified programmatic endpoints.
 
 ---
 
@@ -70,7 +70,8 @@ This document aggregates verified open data catalogs, interactive GIS mapping ut
 ### Inner Metro & Eastern Lower Mainland
 *   **City of Burnaby Open Data Hub**
     *   **Description**: Native ArcGIS Hub publishing precise geometric layers for legal land parcels, public works, and CAD-compatible engineering grids.
-    *   **Endpoint**: [City of Burnaby Open Data Hub](https://data-burnaby.hub.arcgis.com/)
+    *   **Endpoint**: [City of Burnaby Open Data Hub](https://data.burnaby.ca/)
+        (the previously listed `data-burnaby.hub.arcgis.com` hostname no longer exists)
 *   **City of Surrey Open Data Portal**
     *   **Description**: Core repository serving detailed real estate files, transportation layout vectors, and asset matrices for the Surrey municipality.
     *   **Endpoint**: [City of Surrey Open Data](https://surrey.ca)
@@ -89,6 +90,23 @@ This document aggregates verified open data catalogs, interactive GIS mapping ut
 *   **City of Chilliwack Open Data Portal**
     *   **Description**: Public file hierarchy serving community engineering plans, infrastructure lines, and layout vectors.
     *   **Endpoint**: [Chilliwack Open Data Portal](https://data-chilliwack.hub.arcgis.com/)
+
+---
+
+## Endpoints used by LandMap (verified 2026-07-13)
+
+Consumed by `backend/app/ingest/boundaries.py` (`make ingest-boundaries`); all
+return WGS84 GeoJSON with no API key:
+
+*   **Municipalities** - Metro Vancouver Open Data, "Administrative Boundaries"
+    (layer 10): `https://services6.arcgis.com/56eqCzQ5SZhBaDST/arcgis/rest/services/Administrative_Boundaries/FeatureServer/10/query?where=1%3D1&outFields=FullName,ShortName&f=geojson&outSR=4326`
+*   **Vancouver neighborhoods** - City of Vancouver, "local-area-boundary":
+    `https://opendata.vancouver.ca/api/explore/v2.1/catalog/datasets/local-area-boundary/exports/geojson`
+*   **Burnaby neighborhoods** - City of Burnaby, "Community Plan Area Boundaries"
+    (layer 10): `https://gis.burnaby.ca/arcgis/rest/services/OpenData/OpenData1/MapServer/10/query?where=1%3D1&outFields=AREA_NAME&f=geojson&outSR=4326`
+
+Neighborhood polygons for the remaining municipalities are published per-city
+(see the portals above); wire them into the ingest script the same way.
 
 ---
 

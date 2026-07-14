@@ -1,6 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchLayerFeatures, fetchLayers, fetchRegions, fetchSources } from "../../src/api/client";
+import {
+  fetchBoundary,
+  fetchLayerFeatures,
+  fetchLayers,
+  fetchRegions,
+  fetchSources,
+  searchBoundaries,
+} from "../../src/api/client";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -66,5 +73,21 @@ describe("api client", () => {
   it("throws on a failed request", async () => {
     mockFetch(null, false, 500);
     await expect(fetchLayers()).rejects.toThrow(/Request failed/);
+  });
+
+  it("searches boundaries with an encoded query", async () => {
+    mockFetch([{ id: "hood-kitsilano", name: "Kitsilano", kind: "neighborhood" }]);
+    const results = await searchBoundaries("kits & more");
+    expect(results[0].id).toBe("hood-kitsilano");
+    const url = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(url).toContain("/boundaries/search?q=kits%20%26%20more");
+  });
+
+  it("fetches a boundary feature", async () => {
+    mockFetch({ type: "Feature", geometry: { type: "Polygon", coordinates: [] }, properties: {} });
+    const feature = await fetchBoundary("muni-vancouver");
+    expect(feature.type).toBe("Feature");
+    const url = vi.mocked(fetch).mock.calls[0][0] as string;
+    expect(url).toContain("/boundaries/muni-vancouver");
   });
 });

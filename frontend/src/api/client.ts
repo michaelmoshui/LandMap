@@ -1,4 +1,11 @@
-import type { DataSource, FeatureCollection, LayerMeta, RegionMeta } from "./types";
+import type {
+  BoundarySummary,
+  DataSource,
+  FeatureCollection,
+  GeoFeature,
+  LayerMeta,
+  RegionMeta,
+} from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -28,4 +35,12 @@ export function fetchRegions(): Promise<RegionMeta[]> {
 
 export function fetchSources(region?: string): Promise<DataSource[]> {
   return getJson<DataSource[]>(`/sources${regionQuery(region)}`);
+}
+
+export function searchBoundaries(query: string): Promise<BoundarySummary[]> {
+  return getJson<BoundarySummary[]>(`/boundaries/search?q=${encodeURIComponent(query)}`);
+}
+
+export function fetchBoundary(boundaryId: string): Promise<GeoFeature> {
+  return getJson<GeoFeature>(`/boundaries/${boundaryId}`);
 }

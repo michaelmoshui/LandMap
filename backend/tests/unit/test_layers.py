@@ -17,6 +17,8 @@ EXPECTED_GVA_LAYER_IDS = {
     "skytrain-expansion",
     "road-construction",
     "new-highrises",
+    "municipality-boundaries",
+    "neighborhood-boundaries",
 }
 
 EXPECTED_GTA_LAYER_IDS = {
@@ -74,6 +76,21 @@ def test_features_return_valid_geojson(client: TestClient, layer_id: str) -> Non
     for feature in body["features"]:
         assert feature["type"] == "Feature"
         assert "coordinates" in feature["geometry"]
+
+
+def test_boundary_layers_expose_all_ingested_boundaries(client: TestClient) -> None:
+    resp = client.get("/api/layers/municipality-boundaries/features")
+    munis = resp.json()["features"]
+    muni_ids = {f["properties"]["id"] for f in munis}
+    assert "muni-coquitlam" in muni_ids
+    assert len(muni_ids) >= 20
+    assert all(f["properties"]["kind"] == "municipality" for f in munis)
+
+    resp = client.get("/api/layers/neighborhood-boundaries/features")
+    hoods = resp.json()["features"]
+    hood_ids = {f["properties"]["id"] for f in hoods}
+    assert {"hood-vancouver-kerrisdale", "hood-burnaby-lougheed"} <= hood_ids
+    assert all(f["properties"]["kind"] == "neighborhood" for f in hoods)
 
 
 def test_unknown_layer_returns_404(client: TestClient) -> None:

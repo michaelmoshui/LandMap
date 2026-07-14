@@ -7,6 +7,8 @@ requires-python = ">=3.12"
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# Project root holds the top-level `app` package; this keeps isort treating
+# `app` imports as first-party.
 src = ["."]
 
 [tool.ruff.lint]

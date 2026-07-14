@@ -10,6 +10,37 @@ Each entry records:
 
 ---
 
+## BUG-011: Selecting a boundary dimmed an arbitrary-looking patchwork of areas
+
+- **Symptoms**
+  - Clicking Brentwood (Burnaby) selected it correctly (selection list right),
+    but the map dimmed a scattered "bunch of other areas" instead of a coherent
+    focus effect; uncovered land stayed bright as if selected, and some patches
+    were extra dark.
+- **Root cause**
+  - Two compounding issues:
+    1. The dim effect was drawn per non-selected *feature*, so the visual state
+       inherited every dataset flaw: areas with no polygon coverage stayed
+       bright (indistinguishable from "selected"), and overlapping polygons
+       double-blended into darker patches.
+    2. Burnaby's "Community Plan Area Boundaries" is not a neighborhood
+       partition: its 36 areas cover only ~52 of ~99 km^2, 7 pairs overlap, and
+       several entries are not neighborhoods at all (parks, buffer/administrative
+       areas). Burnaby publishes no cleaner neighborhood dataset.
+- **Fix**
+  - Render dimming as a single inverse mask (world polygon with the selected
+    shapes cut out; `buildDimMask` in `frontend/src/map/boundaryLayers.ts`).
+    "Bright = selected" is now an invariant independent of dataset coverage or
+    overlaps, and there is no double-darkening. Selected shapes' interior holes
+    are re-dimmed as their own mask parts.
+  - Ingest now excludes Burnaby's non-neighborhood plan areas by keyword
+    (`BURNABY_EXCLUDE_KEYWORDS` in `app/ingest/boundaries.py`).
+  - Lesson: when visualizing "everything except X", derive the overlay from X
+    (inverse mask), not from "everything else" - the latter silently depends on
+    the dataset being a complete, non-overlapping partition.
+
+---
+
 ## BUG-010: Ingested GeoJSON snapshots silently absent from git (`data/` ignore rule)
 
 - **Symptoms**
@@ -105,6 +136,8 @@ Each entry records:
 - **Fix**
   - Set `src = ["."]` so ruff finds the `app` package and treats it as
     first-party. No import blocks needed reordering.
+  - Never accept an auto-fix that moves first-party imports into the
+    third-party group; that signals a config problem, not an import problem.
 
 ---
 
