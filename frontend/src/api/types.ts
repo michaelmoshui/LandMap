@@ -1,4 +1,4 @@
-// Mirrors backend/app/schemas/layers.py. Keep in sync (see AGENTS.md).
+// Mirrors backend/app/schemas/ (layers.py, boundaries.py). Keep in sync (see AGENTS.md).
 
 export type LayerCategory = "baseline" | "planned";
 
@@ -21,4 +21,12 @@ export interface GeoFeature {
 export interface FeatureCollection {
   type: "FeatureCollection";
   features: GeoFeature[];
+}
+
+export type BoundaryKind = "municipality" | "neighborhood" | "lot";
+
+export interface BoundarySummary {
+  id: string;
+  name: string;
+  kind: BoundaryKind;
 }

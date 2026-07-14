@@ -3,7 +3,14 @@
 An open, self-hostable web map of land information for the **Greater Vancouver
 Area** - housing prices and demographics today, with forward-looking layers
 (road construction, SkyTrain expansion, new high-rises) sourced from government
-plans as the project grows.
+plans as the project grows. Municipality and neighborhood boundaries can be
+toggled as map layers and selected by clicking them (or via search); selected
+areas keep the normal map colors while all non-selected boundaries dim, once
+at least one is selected. Lots are searchable too and highlight in distinct
+colors. Boundary polygons are real government open data (Metro Vancouver
+municipalities; Vancouver and Burnaby neighborhoods so far - see `SOURCES.md`),
+refreshed with `make ingest-boundaries`; lots are sample data until parcel
+ingestion lands.
 
 ## Stack
 
@@ -97,4 +104,4 @@ LandMap/
 - [ ] Ingest real datasets into PostGIS (housing, demographics).
 - [ ] Government-plan layers: road construction, SkyTrain, high-rises.
 - [ ] Time slider for "planned" layers (what's coming and when).
-- [ ] Self-hosted vector tiles to remove the OpenStreetMap raster dependency.
+- [ ] Self-hosted vector tiles to remove the OpenFreeMap dependency.

@@ -31,11 +31,15 @@ test-results/
 blob-report/
 .playwright/
 
-# Docker / data volumes
-data/
+# Docker / data volumes (root-level only; backend/app/data holds committed
+# ingested boundaries - see BUG_LOG.md BUG-009)
+/data/
 pgdata/
 caddy_data/
 caddy_config/
+
+# Claude Code (personal/local overrides; shared config is committed)
+.claude/settings.local.json
 
 # Editor / OS
 .DS_Store
