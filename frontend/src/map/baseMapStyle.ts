@@ -57,7 +57,7 @@ export const BASE_MAP_STYLE: StyleSpecification = {
       type: "fill",
       source: "openmaptiles",
       "source-layer": "water",
-      paint: { "fill-color": "#c9c9c9" },
+      paint: { "fill-color": "#acc4c5" },
     },
     {
       id: "waterway",
@@ -97,7 +97,7 @@ export const BASE_MAP_STYLE: StyleSpecification = {
       "source-layer": "transportation",
       filter: ["in", ["get", "class"], ["literal", ["primary", "secondary", "tertiary"]]],
       paint: {
-        "line-color": "#ffffff",
+        "line-color": "#eeeeee",
         "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 8, 0.75, 18, 16],
       },
     },
@@ -108,7 +108,7 @@ export const BASE_MAP_STYLE: StyleSpecification = {
       "source-layer": "transportation",
       filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk"]]],
       paint: {
-        "line-color": "#d2d2d2",
+        "line-color": "#e0e0e0",
         "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 6, 2, 18, 22],
       },
     },
@@ -119,7 +119,7 @@ export const BASE_MAP_STYLE: StyleSpecification = {
       "source-layer": "transportation",
       filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk"]]],
       paint: {
-        "line-color": "#ffffff",
+        "line-color": "#d5d5d5",
         "line-width": ["interpolate", ["exponential", 1.5], ["zoom"], 6, 1, 18, 18],
       },
     },
