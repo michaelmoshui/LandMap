@@ -10,6 +10,28 @@ Each entry records:
 
 ---
 
+## BUG-013: `make dev` fails on Windows with "The system cannot find the path specified." (Error 255)
+
+- **Symptoms**
+  - On Windows/PowerShell, `make dev` (and any target depending on `stop-host`:
+    `make down-dev`, `make clean`) fails immediately with
+    `The system cannot find the path specified.` and
+    `make: *** [Makefile:61: stop-host] Error 255`, never reaching the
+    `docker compose` step.
+- **Root cause**
+  - The `stop-host` recipe is pure Unix shell - it calls `ss`, `ps`, `grep`,
+    `cut` and uses bash `for`/`case`. GNU Make on Windows runs recipes through
+    `cmd.exe`, which has none of those tools, so the recipe dies before Docker
+    is ever invoked. The Makefile advertises itself as cross-platform, but this
+    target was not.
+- **Fix**
+  - Guard `stop-host` with `ifeq ($(OS),Windows_NT)` and make it a no-op on
+    Windows (echo + return), keeping the Unix implementation under `else`. On
+    Windows the dev stack only runs in Docker Desktop, so there are no stray
+    host Vite/uvicorn processes to reap and skipping is correct.
+
+---
+
 ## BUG-012: Centered bottom toolbar wrapped onto two rows despite fitting the viewport
 
 - **Symptoms**
