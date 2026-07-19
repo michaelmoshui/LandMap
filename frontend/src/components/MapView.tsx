@@ -15,7 +15,8 @@ import {
   maskSourceIdFor,
 } from "../map/boundaryLayers";
 import { buildMapLayers, sourceIdFor } from "../map/buildLayers";
-import { DEFAULT_ZOOM, VANCOUVER_CENTER } from "../map/layerStyles";
+import { assignClusterColors, isClusteredLayer } from "../map/clusterColors";
+import { assignCityColors, DEFAULT_ZOOM, isCityInfoLayer, VANCOUVER_CENTER } from "../map/layerStyles";
 import { popupHtml } from "../map/popup";
 import {
   buildSelectionLayers,
@@ -111,14 +112,19 @@ export default function MapView({
         onBoundaryToggleRef.current({ id: props.id, name: props.name, kind: props.kind });
       }
     });
-    for (const hitId of HIT_LAYER_IDS) {
-      map.on("mouseenter", hitId, () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", hitId, () => {
-        map.getCanvas().style.cursor = "";
-      });
-    }
+    // Show the clickable (pointer) cursor whenever the mouse is over any
+    // interactive feature - data layers (road construction, high-rises,
+    // transit lines, ...) as well as the boundary hit layers - instead of
+    // keeping the map's grab cursor everywhere.
+    map.on("mousemove", (e) => {
+      const interactive = [
+        ...[...addedRef.current].filter((id) => map.getLayer(id) && !BOUNDARY_SPEC_IDS.has(id)),
+        ...HIT_LAYER_IDS.filter((id) => map.getLayer(id)),
+      ];
+      const over =
+        interactive.length > 0 && map.queryRenderedFeatures(e.point, { layers: interactive }).length > 0;
+      map.getCanvas().style.cursor = over ? "pointer" : "";
+    });
 
     mapRef.current = map;
     return () => {
@@ -169,7 +175,10 @@ export default function MapView({
           : buildMapLayers(layer.id, layer.category);
         if (!map.getSource(sourceId)) {
           try {
-            const data = await fetchLayerFeatures(layer.id);
+            const fetched = await fetchLayerFeatures(layer.id);
+            let data = fetched;
+            if (isCityInfoLayer(layer.id)) data = assignCityColors(fetched);
+            else if (isClusteredLayer(layer.id)) data = assignClusterColors(fetched);
             layerDataRef.current.set(layer.id, data);
             if (!map.getSource(sourceId)) {
               map.addSource(sourceId, { type: "geojson", data: data as never });

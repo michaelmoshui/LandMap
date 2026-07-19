@@ -146,6 +146,17 @@ test.describe("LandMap end-to-end", () => {
     }
   });
 
+  test("toggling Road Construction loads its (cluster-coloured) features", async ({ page }) => {
+    const featuresRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/layers/road-construction/features"),
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: "Roads" }).click();
+    await page.getByText("Road Construction", { exact: true }).click();
+    const req = await featuresRequest;
+    expect(req.url()).toContain("/api/layers/road-construction/features");
+  });
+
   test("switching to Toronto shows GTA layers", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Transit" }).click();
