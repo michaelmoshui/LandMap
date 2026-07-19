@@ -10,6 +10,10 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function isHttpUrl(value: unknown): value is string {
+  return typeof value === "string" && /^https?:\/\//i.test(value.trim());
+}
+
 function formatValue(value: unknown): string {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value.toLocaleString("en-CA");
@@ -17,8 +21,23 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
+/**
+ * Render a URL as a "Open link" button that opens the target in a new tab,
+ * instead of printing the raw (often overflowing) URL text.
+ */
+function renderUrlCell(value: string): string {
+  const href = escapeHtml(value.trim());
+  return `<a class="popup-link" href="${href}" target="_blank" rel="noopener noreferrer">Open link</a>`;
+}
+
+// Friendlier labels for specific property keys; everything else just has its
+// underscores turned into spaces.
+const LABEL_OVERRIDES: Record<string, string> = {
+  url: "Source",
+};
+
 function labelFor(key: string): string {
-  return key.replace(/_/g, " ");
+  return LABEL_OVERRIDES[key] ?? key.replace(/_/g, " ");
 }
 
 /**
@@ -32,9 +51,10 @@ export function popupHtml(properties: Record<string, unknown>): string {
     if (key === "source" || key === "color") continue;
     if (value === null || value === undefined || value === "") continue;
     if (rows.length >= MAX_ROWS) break;
-    rows.push(
-      `<tr><th>${escapeHtml(labelFor(key))}</th><td>${escapeHtml(formatValue(value))}</td></tr>`,
-    );
+    const cell = isHttpUrl(value)
+      ? renderUrlCell(value)
+      : escapeHtml(formatValue(value));
+    rows.push(`<tr><th>${escapeHtml(labelFor(key))}</th><td>${cell}</td></tr>`);
   }
   const source = properties.source;
   const footer =
