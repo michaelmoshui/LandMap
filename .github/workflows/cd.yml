@@ -48,8 +48,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && ${{ secrets.SSH_HOST != '' }}
-    steps:
+    if: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch') && secrets.SSH_HOST != '' }}
       - name: Checkout code
         uses: actions/checkout@v4
 
