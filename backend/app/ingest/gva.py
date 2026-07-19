@@ -15,6 +15,8 @@ Sources (see SOURCES.md):
   under construction + upcoming projects).
 - ``new-highrises``    City of Vancouver ``issued-building-permits``: new
   residential buildings worth $20M+ issued since 2023.
+- ``skytrain-lines``, ``skytrain-stations``, ``bus-routes``, ``bus-stops``,
+  ``seabus-wce``    TransLink GTFS static feed (see ``app.ingest.translink``).
 
 Run inside the backend container (or a host venv) to refresh the snapshots:
 
@@ -35,6 +37,7 @@ from pathlib import Path
 from typing import Any
 
 from app.core.config import settings
+from app.ingest import translink
 from app.ingest.fetch import get_json, post_form_json
 from app.schemas.layers import Feature, FeatureCollection
 
@@ -406,6 +409,11 @@ BUILDERS = {
     "skytrain-expansion": fetch_skytrain_expansion,
     "road-construction": fetch_road_construction,
     "new-highrises": fetch_new_highrises,
+    "skytrain-lines": translink.fetch_skytrain_lines,
+    "skytrain-stations": translink.fetch_skytrain_stations,
+    "bus-routes": translink.fetch_bus_routes,
+    "bus-stops": translink.fetch_bus_stops,
+    "seabus-wce": translink.fetch_seabus_wce,
 }
 
 

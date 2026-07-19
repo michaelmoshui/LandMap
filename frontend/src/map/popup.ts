@@ -23,13 +23,14 @@ function labelFor(key: string): string {
 
 /**
  * Build the HTML for a feature popup: a small key/value table of the
- * feature's properties, skipping empty values and the attribution field
- * (shown once as a footer instead).
+ * feature's properties, skipping empty values, the rendering-only color
+ * field, and the attribution field (shown once as a footer instead).
  */
 export function popupHtml(properties: Record<string, unknown>): string {
   const rows: string[] = [];
   for (const [key, value] of Object.entries(properties)) {
-    if (key === "source" || value === null || value === undefined || value === "") continue;
+    if (key === "source" || key === "color") continue;
+    if (value === null || value === undefined || value === "") continue;
     if (rows.length >= MAX_ROWS) break;
     rows.push(
       `<tr><th>${escapeHtml(labelFor(key))}</th><td>${escapeHtml(formatValue(value))}</td></tr>`,

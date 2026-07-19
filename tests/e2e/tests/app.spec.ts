@@ -15,6 +15,11 @@ test.describe("LandMap end-to-end", () => {
     const ids = layers.map((l) => l.id);
     expect(ids).toContain("housing-prices");
     expect(ids).toContain("skytrain-expansion");
+    expect(ids).toContain("skytrain-lines");
+    expect(ids).toContain("skytrain-stations");
+    expect(ids).toContain("bus-routes");
+    expect(ids).toContain("bus-stops");
+    expect(ids).toContain("seabus-wce");
   });
 
   test("frontend loads and shows the layer toolbar", async ({ page }) => {
@@ -52,6 +57,72 @@ test.describe("LandMap end-to-end", () => {
     expect(vancouver.properties.population_2021).toBeGreaterThan(500000);
   });
 
+  test("transit layers serve the TransLink network in official colours", async ({ request }) => {
+    // SkyTrain lines carry TransLink's official route colours from GTFS.
+    const lines = await (await request.get("/api/layers/skytrain-lines/features")).json();
+    const colors = new Set(lines.features.map((f: { properties: { color: string } }) => f.properties.color));
+    expect(colors).toContain("#0033A0"); // Expo Line
+    expect(colors).toContain("#FFCD00"); // Millennium Line
+    expect(colors).toContain("#007C9F"); // Canada Line
+
+    // Stations include the interchange hub and name the lines serving it.
+    const stations = await (await request.get("/api/layers/skytrain-stations/features")).json();
+    const waterfront = stations.features.find(
+      (f: { properties: { station: string } }) => f.properties.station === "Waterfront Station",
+    );
+    expect(waterfront).toBeTruthy();
+
+    // The full bus network: hundreds of routes, thousands of stops.
+    const routes = await (await request.get("/api/layers/bus-routes/features")).json();
+    expect(routes.features.length).toBeGreaterThanOrEqual(200);
+    const stops = await (await request.get("/api/layers/bus-stops/features")).json();
+    expect(stops.features.length).toBeGreaterThanOrEqual(5000);
+
+    // SeaBus & West Coast Express render as their own layer.
+    const seabus = await (await request.get("/api/layers/seabus-wce/features")).json();
+    const modes = new Set(seabus.features.map((f: { properties: { mode?: string } }) => f.properties.mode));
+    expect(modes).toContain("Ferry");
+    expect(modes).toContain("Commuter Rail");
+  });
+
+  test("toggling SkyTrain lines from the Transit flyout requests its features", async ({ page }) => {
+    const featuresRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/layers/skytrain-lines/features"),
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: "Transit" }).click();
+    await page.getByText("SkyTrain Lines", { exact: true }).click();
+    const req = await featuresRequest;
+    expect(req.url()).toContain("/api/layers/skytrain-lines/features");
+  });
+
+  test("GTA transit layers serve the TTC and GO networks in official colours", async ({
+    request,
+  }) => {
+    // TTC rapid transit lines carry the official line colours from GTFS.
+    const lines = await (await request.get("/api/layers/gta-subway-lines/features")).json();
+    const colors = new Set(lines.features.map((f: { properties: { color: string } }) => f.properties.color));
+    expect(colors).toContain("#D5C82B"); // Line 1 (Yonge-University)
+    expect(colors).toContain("#008000"); // Line 2 (Bloor - Danforth)
+    expect(colors).toContain("#B300B3"); // Line 4 (Sheppard)
+
+    // Streetcars render as their own layer in TTC red.
+    const streetcars = await (await request.get("/api/layers/gta-streetcar-lines/features")).json();
+    const streetcarColors = new Set(
+      streetcars.features.map((f: { properties: { color: string } }) => f.properties.color),
+    );
+    expect(streetcarColors).toContain("#ED1C24");
+
+    // Stations, the bus network, and GO rail are all populated.
+    const stations = await (await request.get("/api/layers/gta-subway-stations/features")).json();
+    expect(stations.features.length).toBeGreaterThanOrEqual(60);
+    const stops = await (await request.get("/api/layers/gta-bus-stops/features")).json();
+    expect(stops.features.length).toBeGreaterThanOrEqual(5000);
+    const go = await (await request.get("/api/layers/gta-go-transit/features")).json();
+    const goModes = new Set(go.features.map((f: { properties: { mode?: string } }) => f.properties.mode));
+    expect(goModes).toContain("GO Rail");
+  });
+
   test("regions API lists Vancouver and Toronto", async ({ request }) => {
     const resp = await request.get("/api/regions");
     expect(resp.ok()).toBeTruthy();
@@ -82,6 +153,8 @@ test.describe("LandMap end-to-end", () => {
     // The flyout stays open across the region switch and re-renders with GTA layers.
     await page.getByLabel("Region").selectOption("gta");
     await expect(page.getByText("Transit Expansion", { exact: true })).toBeVisible();
+    await expect(page.getByText("Subway Lines", { exact: true })).toBeVisible();
+    await expect(page.getByText("Streetcar Lines", { exact: true })).toBeVisible();
     await expect(page.getByText("SkyTrain Expansion")).not.toBeVisible();
   });
 });

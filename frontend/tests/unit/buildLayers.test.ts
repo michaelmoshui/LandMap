@@ -34,6 +34,50 @@ describe("buildMapLayers", () => {
     const plannedPoints = buildMapLayers("road-construction", "planned").find(
       (s) => s.type === "circle",
     );
-    expect(baselinePoints?.paint["circle-color"]).not.toBe(plannedPoints?.paint["circle-color"]);
+    expect(baselinePoints?.paint["circle-color"]).not.toEqual(
+      plannedPoints?.paint["circle-color"],
+    );
+  });
+
+  it("prefers a feature's own color property over the category color", () => {
+    const line = buildMapLayers("skytrain-lines", "baseline").find((s) => s.type === "line");
+    expect(line?.paint["line-color"]).toEqual(["coalesce", ["get", "color"], "#2563eb"]);
+  });
+
+  it("renders stations as white circles with a line-colored ring", () => {
+    const points = buildMapLayers("skytrain-stations", "baseline").find(
+      (s) => s.type === "circle",
+    );
+    expect(points?.paint["circle-color"]).toBe("#ffffff");
+    expect(points?.paint["circle-stroke-color"]).toEqual([
+      "coalesce",
+      ["get", "color"],
+      "#2563eb",
+    ]);
+  });
+
+  it("draws bus routes thinner than rail and bus stops with the TransLink gray-blue", () => {
+    const busLine = buildMapLayers("bus-routes", "baseline").find((s) => s.type === "line");
+    const railLine = buildMapLayers("skytrain-lines", "baseline").find((s) => s.type === "line");
+    expect(busLine?.paint["line-width"]).toBeLessThan(railLine?.paint["line-width"] as number);
+
+    const stops = buildMapLayers("bus-stops", "baseline").find((s) => s.type === "circle");
+    expect(stops?.paint["circle-color"]).toEqual(["coalesce", ["get", "color"], "#7A99AC"]);
+  });
+
+  it("styles the GTA transit layers like their GVA counterparts", () => {
+    const gvaStations = buildMapLayers("skytrain-stations", "baseline").find(
+      (s) => s.type === "circle",
+    );
+    const gtaStations = buildMapLayers("gta-subway-stations", "baseline").find(
+      (s) => s.type === "circle",
+    );
+    expect(gtaStations?.paint).toEqual(gvaStations?.paint);
+
+    const streetcar = buildMapLayers("gta-streetcar-lines", "baseline").find(
+      (s) => s.type === "line",
+    );
+    const subway = buildMapLayers("gta-subway-lines", "baseline").find((s) => s.type === "line");
+    expect(streetcar?.paint["line-width"]).toBeLessThan(subway?.paint["line-width"] as number);
   });
 });

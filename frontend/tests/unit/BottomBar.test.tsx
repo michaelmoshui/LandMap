@@ -34,6 +34,26 @@ describe("groupLayers", () => {
     expect(groups[0].layers.map((l) => l.id)).toEqual(["housing-prices"]);
   });
 
+  it("groups the TransLink and TTC/GO transit layers under Transit", () => {
+    const transit: LayerMeta[] = [
+      "skytrain-lines",
+      "skytrain-stations",
+      "bus-routes",
+      "bus-stops",
+      "seabus-wce",
+      "gta-subway-lines",
+      "gta-subway-stations",
+      "gta-streetcar-lines",
+      "gta-bus-routes",
+      "gta-bus-stops",
+      "gta-go-transit",
+    ].map((id) => ({ id, title: id, description: "", category: "baseline", region: "gva" }));
+    const groups = groupLayers(transit);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].id).toBe("transit");
+    expect(groups[0].layers).toHaveLength(11);
+  });
+
   it("puts unrecognized layers in the More group and drops empty groups", () => {
     const layer: LayerMeta = {
       id: "mystery-layer",

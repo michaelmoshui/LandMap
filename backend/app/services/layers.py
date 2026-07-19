@@ -49,6 +49,56 @@ _LAYERS: list[LayerMeta] = [
         region="gva",
     ),
     LayerMeta(
+        id="skytrain-lines",
+        title="SkyTrain Lines",
+        description=(
+            "SkyTrain routes (Expo, Millennium and Canada Line) in TransLink's "
+            "official line colours. Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="skytrain-stations",
+        title="SkyTrain Stations",
+        description=(
+            "SkyTrain stations with the lines serving each. Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="bus-routes",
+        title="Bus Routes",
+        description=(
+            "All TransLink bus routes in TransLink's colours (RapidBus green, "
+            "99 B-Line orange, local routes gray-blue). "
+            "Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="bus-stops",
+        title="Bus Stops",
+        description=(
+            "Every TransLink bus stop with the routes serving it. "
+            "Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
+        id="seabus-wce",
+        title="SeaBus & West Coast Express",
+        description=(
+            "SeaBus and West Coast Express routes and stations in TransLink's "
+            "official colours. Source: TransLink GTFS static feed."
+        ),
+        category="baseline",
+        region="gva",
+    ),
+    LayerMeta(
         id="skytrain-expansion",
         title="SkyTrain Expansion",
         description=(
@@ -90,6 +140,66 @@ _LAYERS: list[LayerMeta] = [
         id="gta-demographics",
         title="Demographics",
         description="Population and household characteristics by area (sample data).",
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-subway-lines",
+        title="Subway Lines",
+        description=(
+            "TTC rapid transit Lines 1-6 (subway and LRT) in the TTC's "
+            "official line colours. Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-subway-stations",
+        title="Subway Stations",
+        description=(
+            "TTC subway and LRT stations with the lines serving each. "
+            "Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-streetcar-lines",
+        title="Streetcar Lines",
+        description=(
+            "TTC streetcar network in the TTC's colours (day routes red, "
+            "night routes blue). Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-bus-routes",
+        title="Bus Routes",
+        description=(
+            "All TTC bus routes in the TTC's colours (day red, express green, "
+            "night blue). Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-bus-stops",
+        title="Bus Stops",
+        description=(
+            "Every TTC bus and streetcar stop with the routes serving it. "
+            "Source: TTC GTFS static feed."
+        ),
+        category="baseline",
+        region="gta",
+    ),
+    LayerMeta(
+        id="gta-go-transit",
+        title="GO Transit Rail",
+        description=(
+            "GO train lines and stations in Metrolinx's official line "
+            "colours. Source: GO Transit (Metrolinx) GTFS static feed."
+        ),
         category="baseline",
         region="gta",
     ),
@@ -174,6 +284,123 @@ def _sample_demographics() -> FeatureCollection:
     )
 
 
+def _line(coords: list[list[float]], **props: object) -> Feature:
+    return Feature(geometry={"type": "LineString", "coordinates": coords}, properties=dict(props))
+
+
+# TransLink's official route colours (from its GTFS feed's route_color column).
+_TRANSLINK = {
+    "expo": "#0033A0",
+    "millennium": "#FFCD00",
+    "canada": "#007C9F",
+    "seabus": "#746661",
+    "wce": "#87189D",
+    "rapidbus": "#008522",
+}
+
+
+def _sample_skytrain_lines() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-123.1119, 49.2856], [-123.0121, 49.2258], [-122.8491, 49.2258]],
+                route="Expo Line (sample)",
+                mode="SkyTrain",
+                color=_TRANSLINK["expo"],
+            ),
+            _line(
+                [[-123.0779, 49.2632], [-122.9411, 49.2610], [-122.7947, 49.2758]],
+                route="Millennium Line (sample)",
+                mode="SkyTrain",
+                color=_TRANSLINK["millennium"],
+            ),
+            _line(
+                [[-123.1119, 49.2856], [-123.1163, 49.2094], [-123.1365, 49.1666]],
+                route="Canada Line (sample)",
+                mode="SkyTrain",
+                color=_TRANSLINK["canada"],
+            ),
+        ]
+    )
+
+
+def _sample_skytrain_stations() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(
+                -123.1119,
+                49.2856,
+                station="Waterfront Station (sample)",
+                lines="Canada Line, Expo Line",
+                color="#333333",
+            ),
+            _point(
+                -123.0121,
+                49.2258,
+                station="Metrotown Station (sample)",
+                lines="Expo Line",
+                color=_TRANSLINK["expo"],
+            ),
+        ]
+    )
+
+
+def _sample_bus_routes() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-123.1140, 49.2634], [-123.0568, 49.2626], [-122.9990, 49.2610]],
+                route="99 (sample)",
+                name="Broadway B-Line",
+                mode="Bus",
+                color="#D04110",
+            ),
+            _line(
+                [[-122.8491, 49.1913], [-122.8449, 49.1044]],
+                route="R1 (sample)",
+                name="King George Blvd",
+                mode="Bus",
+                color=_TRANSLINK["rapidbus"],
+            ),
+        ]
+    )
+
+
+def _sample_bus_stops() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(-123.1140, 49.2634, stop="W Broadway @ Cambie St (sample)", routes="9, 99"),
+            _point(-122.8491, 49.1913, stop="King George Stn Bay 1 (sample)", routes="R1, 321"),
+        ]
+    )
+
+
+def _sample_seabus_wce() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-123.1113, 49.2866], [-123.0829, 49.3095]],
+                route="SeaBus (sample)",
+                mode="Ferry",
+                color=_TRANSLINK["seabus"],
+            ),
+            _line(
+                [[-123.1119, 49.2856], [-122.8465, 49.2830], [-122.6055, 49.2172]],
+                route="West Coast Express (sample)",
+                mode="Commuter Rail",
+                color=_TRANSLINK["wce"],
+            ),
+            _point(
+                -123.0829,
+                49.3095,
+                station="Lonsdale Quay (sample)",
+                lines="SeaBus",
+                color=_TRANSLINK["seabus"],
+            ),
+        ]
+    )
+
+
 def _sample_skytrain_expansion() -> FeatureCollection:
     return FeatureCollection(
         features=[
@@ -243,6 +470,119 @@ def _sample_gta_demographics() -> FeatureCollection:
     )
 
 
+# TTC and GO official route colours (from their GTFS feeds' route_color).
+_TTC = {
+    "line1": "#D5C82B",
+    "line2": "#008000",
+    "line4": "#B300B3",
+    "streetcar": "#ED1C24",
+}
+_GO_LAKESHORE_WEST = "#98002E"
+
+
+def _sample_gta_subway_lines() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.4163, 43.6822], [-79.3806, 43.6459], [-79.3941, 43.7615]],
+                route="Line 1 (Yonge-University) (sample)",
+                mode="Subway",
+                color=_TTC["line1"],
+            ),
+            _line(
+                [[-79.5372, 43.6363], [-79.4530, 43.6559], [-79.2930, 43.6866]],
+                route="Line 2 (Bloor - Danforth) (sample)",
+                mode="Subway",
+                color=_TTC["line2"],
+            ),
+            _line(
+                [[-79.4113, 43.7615], [-79.3460, 43.7756]],
+                route="Line 4 (Sheppard) (sample)",
+                mode="Subway",
+                color=_TTC["line4"],
+            ),
+        ]
+    )
+
+
+def _sample_gta_subway_stations() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(
+                -79.3806,
+                43.6459,
+                station="Union Station (sample)",
+                lines="Line 1 (Yonge-University)",
+                color=_TTC["line1"],
+            ),
+            _point(
+                -79.3995,
+                43.6682,
+                station="St George Station (sample)",
+                lines="Line 1 (Yonge-University), Line 2 (Bloor - Danforth)",
+                color="#333333",
+            ),
+        ]
+    )
+
+
+def _sample_gta_streetcar_lines() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.4677, 43.6362], [-79.3841, 43.6497], [-79.2989, 43.6684]],
+                route="501 (sample)",
+                name="Queen",
+                mode="Streetcar",
+                color=_TTC["streetcar"],
+            ),
+        ]
+    )
+
+
+def _sample_gta_bus_routes() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.4257, 43.7970], [-79.4113, 43.7615], [-79.3941, 43.7276]],
+                route="97 (sample)",
+                name="Yonge",
+                mode="Bus",
+                color=_TTC["streetcar"],
+            ),
+        ]
+    )
+
+
+def _sample_gta_bus_stops() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _point(-79.3841, 43.6497, stop="Queen St West @ Yonge St (sample)", routes="501"),
+            _point(-79.4113, 43.7615, stop="Yonge St @ Sheppard Ave (sample)", routes="97"),
+        ]
+    )
+
+
+def _sample_gta_go_transit() -> FeatureCollection:
+    return FeatureCollection(
+        features=[
+            _line(
+                [[-79.3806, 43.6453], [-79.5851, 43.5860], [-79.6876, 43.5155]],
+                route="Lakeshore West (sample)",
+                mode="GO Rail",
+                color=_GO_LAKESHORE_WEST,
+            ),
+            _point(
+                -79.3806,
+                43.6453,
+                station="Union Station GO (sample)",
+                lines="Lakeshore West",
+                color=_GO_LAKESHORE_WEST,
+            ),
+        ]
+    )
+
+
 def _sample_gta_transit_expansion() -> FeatureCollection:
     return FeatureCollection(
         features=[
@@ -308,11 +648,22 @@ def _neighborhood_boundaries() -> FeatureCollection:
 _BUILDERS: dict[str, Callable[[], FeatureCollection]] = {
     "housing-prices": _sample_housing_prices,
     "demographics": _sample_demographics,
+    "skytrain-lines": _sample_skytrain_lines,
+    "skytrain-stations": _sample_skytrain_stations,
+    "bus-routes": _sample_bus_routes,
+    "bus-stops": _sample_bus_stops,
+    "seabus-wce": _sample_seabus_wce,
     "skytrain-expansion": _sample_skytrain_expansion,
     "road-construction": _sample_road_construction,
     "new-highrises": _sample_new_highrises,
     "gta-housing-prices": _sample_gta_housing_prices,
     "gta-demographics": _sample_gta_demographics,
+    "gta-subway-lines": _sample_gta_subway_lines,
+    "gta-subway-stations": _sample_gta_subway_stations,
+    "gta-streetcar-lines": _sample_gta_streetcar_lines,
+    "gta-bus-routes": _sample_gta_bus_routes,
+    "gta-bus-stops": _sample_gta_bus_stops,
+    "gta-go-transit": _sample_gta_go_transit,
     "gta-transit-expansion": _sample_gta_transit_expansion,
     "gta-road-construction": _sample_gta_road_construction,
     "gta-new-highrises": _sample_gta_new_highrises,

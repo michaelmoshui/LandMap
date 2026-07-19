@@ -26,6 +26,7 @@ help: ## Show this help
 	@echo   make lint          Lint backend and frontend
 	@echo   make fmt           Auto-format backend and frontend
 	@echo   make ingest-gva    Refresh GVA data snapshots from the open-data portals
+	@echo   make ingest-gta    Refresh GTA data snapshots from the open-data portals
 	@echo   make ingest-boundaries  Refresh boundary polygons from open-data portals
 	@echo   make clean         Stop everything and remove volumes
 
@@ -106,6 +107,10 @@ test-e2e: ## End-to-end tests (Playwright over the full stack)
 .PHONY: ingest-gva
 ingest-gva: ## Refresh GVA layer snapshots from the open-data portals
 	$(COMPOSE_DEV) run --rm --build --no-deps backend python -m app.ingest.gva
+
+.PHONY: ingest-gta
+ingest-gta: ## Refresh GTA layer snapshots (TTC + GO Transit GTFS)
+	$(COMPOSE_DEV) run --rm --build --no-deps backend python -m app.ingest.gta
 
 # ---- Quality ------------------------------------------------------------
 .PHONY: lint
