@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { DataSource, LayerMeta, RegionMeta } from "../../src/api/types";
-import BottomBar, { groupLayers } from "../../src/components/BottomBar";
+import BottomBar, { flyoutAlignment, groupLayers } from "../../src/components/BottomBar";
 
 const LAYERS: LayerMeta[] = [
   { id: "housing-prices", title: "Housing Prices", description: "", category: "baseline", region: "gva" },
@@ -66,6 +66,30 @@ describe("groupLayers", () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].id).toBe("other");
     expect(groups[0].layers).toEqual([layer]);
+  });
+
+  it("groups the demographics (City Info) layer under Boundaries", () => {
+    const layers: LayerMeta[] = [
+      { id: "demographics", title: "City Info", description: "", category: "baseline", region: "gva" },
+      { id: "municipality-boundaries", title: "Municipality Boundaries", description: "", category: "baseline", region: "gva" },
+    ];
+    const groups = groupLayers(layers);
+    expect(groups.map((g) => g.id)).toEqual(["boundaries"]);
+    expect(groups[0].layers.map((l) => l.id)).toEqual(["demographics", "municipality-boundaries"]);
+  });
+});
+
+describe("flyoutAlignment", () => {
+  it("right-aligns buttons near the right edge", () => {
+    expect(flyoutAlignment({ left: 900, right: 960 }, 1000)).toBe("right");
+  });
+
+  it("left-aligns buttons near the left edge", () => {
+    expect(flyoutAlignment({ left: 40, right: 100 }, 1000)).toBe("left");
+  });
+
+  it("centers buttons in the middle of the viewport", () => {
+    expect(flyoutAlignment({ left: 470, right: 530 }, 1000)).toBe("center");
   });
 });
 
@@ -141,6 +165,39 @@ describe("BottomBar", () => {
     await userEvent.click(screen.getByRole("button", { name: "Data sources" }));
     const link = screen.getByRole("link", { name: "Metro Vancouver Portal" });
     expect(link).toHaveAttribute("href", "https://example.com/data");
+  });
+
+  it("selects all layers in a group via the select-all checkbox", async () => {
+    const onToggleGroup = vi.fn();
+    render(
+      <BottomBar
+        layers={LAYERS}
+        active={new Set()}
+        onToggle={() => {}}
+        onToggleGroup={onToggleGroup}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Transit" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Select all" }));
+    // Transit group holds the SkyTrain Expansion layer; select-all activates it.
+    expect(onToggleGroup).toHaveBeenCalledWith(["skytrain-expansion"], true);
+  });
+
+  it("deselects all layers when select-all is already fully checked", async () => {
+    const onToggleGroup = vi.fn();
+    render(
+      <BottomBar
+        layers={LAYERS}
+        active={new Set(["skytrain-expansion"])}
+        onToggle={() => {}}
+        onToggleGroup={onToggleGroup}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Transit" }));
+    const selectAll = screen.getByRole("checkbox", { name: "Select all" });
+    expect(selectAll).toBeChecked();
+    await userEvent.click(selectAll);
+    expect(onToggleGroup).toHaveBeenCalledWith(["skytrain-expansion"], false);
   });
 
   it("closes the open flyout on Escape", async () => {

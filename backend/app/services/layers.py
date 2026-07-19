@@ -40,7 +40,7 @@ _LAYERS: list[LayerMeta] = [
     ),
     LayerMeta(
         id="demographics",
-        title="Demographics",
+        title="City Info",
         description=(
             "2021 Census population, dwellings, and density by Metro Vancouver "
             "municipality. Source: Statistics Canada."
@@ -138,7 +138,7 @@ _LAYERS: list[LayerMeta] = [
     ),
     LayerMeta(
         id="gta-demographics",
-        title="Demographics",
+        title="City Info",
         description="Population and household characteristics by area (sample data).",
         category="baseline",
         region="gta",

@@ -34,6 +34,29 @@ describe("popupHtml", () => {
     expect(html).not.toContain("<th>color</th>");
   });
 
+  it("renders http(s) URLs as a new-tab link button instead of raw text", () => {
+    const url = "http://vanmapp1.vancouver.ca/roadahead/events/details/f3fc2aaf";
+    const html = popupHtml({
+      project: "Lane repaving",
+      url,
+    });
+    expect(html).toContain(`href="${url}"`);
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener noreferrer"');
+    expect(html).toContain(">Open link</a>");
+    // The raw URL should not appear as plain table cell text.
+    expect(html).not.toContain(`<td>${url}</td>`);
+  });
+
+  it("labels the url property as Source", () => {
+    const html = popupHtml({
+      project: "Lane repaving",
+      url: "https://vancouver.ca/roadahead",
+    });
+    expect(html).toContain("<th>Source</th>");
+    expect(html).not.toContain("<th>url</th>");
+  });
+
   it("escapes HTML in keys and values", () => {
     const html = popupHtml({ "<b>": '"><script>alert(1)</script>' });
     expect(html).not.toContain("<script>");

@@ -57,6 +57,13 @@ down-dev: stop-host ## Stop the dev stack (containers + stray host dev servers)
 # root-owned docker-proxy, nor make/pgrep itself.
 DEV_PORTS := 5173 8000
 .PHONY: stop-host
+ifeq ($(OS),Windows_NT)
+# On Windows the dev stack only ever runs in Docker Desktop, so there are no
+# stray host Vite/uvicorn processes to reap. The Unix implementation below
+# relies on ss/ps/grep, which cmd.exe cannot run, so skip it here.
+stop-host: ## No-op on Windows (dev servers only run in Docker)
+	@echo Skipping stop-host on Windows - dev servers run in Docker.
+else
 stop-host: ## Kill stray host dev servers (vite/uvicorn) holding the dev ports
 	@killed=""; \
 	for port in $(DEV_PORTS); do \
@@ -71,6 +78,7 @@ stop-host: ## Kill stray host dev servers (vite/uvicorn) holding the dev ports
 	  done; \
 	done; \
 	[ -n "$$killed" ] || echo "No stray host dev servers found."
+endif
 
 .PHONY: logs
 logs: ## Tail logs

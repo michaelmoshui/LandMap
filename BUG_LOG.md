@@ -10,6 +10,83 @@ Each entry records:
 
 ---
 
+## BUG-015: Boundary bugs from the raw Metro Vancouver municipality dataset (grey wedge on Delta, Delta/Tsawwassen overlap, "Electoral Area A")
+
+- **Symptoms**
+  - Selecting **Delta** in Municipality Boundaries drew a stray grey diagonal
+    wedge across the map (a mask artifact), not just Delta's focus outline.
+  - Clicking Delta's small NW piece lit up both it and the larger adjacent area
+    as "Delta", yet clicking that larger area selected "Tsawwassen First Nation":
+    the two boundaries claimed the same ground.
+  - "Electoral Area A" showed up as a selectable "municipality" though it is an
+    unincorporated electoral area, not a city.
+- **Root cause**
+  - The municipality ingest built geometry with a naive per-ring Douglas-Peucker
+    simplify and then rounded coordinates *after the fact*. That folded some
+    boundaries back on themselves into **invalid, self-intersecting polygons**;
+    when such a shape was cut out of the focus dim-mask (world-minus-selection),
+    the bad winding rendered as a doubly-filled grey wedge.
+  - Metro Vancouver's "Administrative Boundaries" layer includes non-municipal
+    rows, and its **Delta polygon overlaps the Tsawwassen First Nation treaty
+    lands** (TFN is drawn on top), so both features covered the same area.
+- **Fix**
+  - Rewrote municipality handling in `app/ingest/boundaries.py` to use **shapely**
+    (added as an ingest-only dev dependency; the runtime API never imports it):
+    union rows with `make_valid`, drop `EXCLUDED_MUNICIPALITIES`
+    (`Electoral Area A`), **subtract any First Nation's lands from the
+    municipalities they overlap** (Delta − TFN, both kept selectable), then
+    topology-preserving `simplify` + `set_precision` snap to the 1e-5 grid so the
+    output stays valid (no post-hoc rounding). Re-ran `make ingest-boundaries`.
+  - Covered by new tests in `backend/tests/unit/test_ingest_boundaries.py`
+    (Electoral Area A excluded; First Nation carved out of the overlapping city).
+
+---
+
+## BUG-014: Data-sources flyout vanished when its horizontal scrollbar was clicked
+
+- **Symptoms**
+  - Opening the "Sources" flyout on the right of the bottom toolbar pushed content
+    past the right edge of the page, adding a horizontal scrollbar. Clicking that
+    scrollbar to reveal the rightmost sources instantly closed the flyout, so the
+    cut-off entries could never be read.
+- **Root cause**
+  - The flyout was always centered (`left: 50%; translateX(-50%)`). For a button
+    near the right edge, the centered panel overflowed the viewport, creating a
+    page-level horizontal scrollbar. That scrollbar lives on the document, i.e.
+    *outside* the toolbar element, so clicking it fired the flyout's
+    outside-`pointerdown` handler and dismissed it.
+- **Fix**
+  - Anchor each flyout to its button based on the button's on-screen position
+    (`flyoutAlignment` in `BottomBar.tsx`): right-edge buttons open right-aligned,
+    left-edge buttons left-aligned, middle buttons stay centered. Also gave the
+    flyout a `max-height`/`overflow-y: auto` and set `.app { overflow: hidden }`
+    so an off-screen panel can never spawn a page scrollbar again. Covered by
+    `flyoutAlignment` unit tests.
+
+---
+
+## BUG-013: `make dev` fails on Windows with "The system cannot find the path specified." (Error 255)
+
+- **Symptoms**
+  - On Windows/PowerShell, `make dev` (and any target depending on `stop-host`:
+    `make down-dev`, `make clean`) fails immediately with
+    `The system cannot find the path specified.` and
+    `make: *** [Makefile:61: stop-host] Error 255`, never reaching the
+    `docker compose` step.
+- **Root cause**
+  - The `stop-host` recipe is pure Unix shell - it calls `ss`, `ps`, `grep`,
+    `cut` and uses bash `for`/`case`. GNU Make on Windows runs recipes through
+    `cmd.exe`, which has none of those tools, so the recipe dies before Docker
+    is ever invoked. The Makefile advertises itself as cross-platform, but this
+    target was not.
+- **Fix**
+  - Guard `stop-host` with `ifeq ($(OS),Windows_NT)` and make it a no-op on
+    Windows (echo + return), keeping the Unix implementation under `else`. On
+    Windows the dev stack only runs in Docker Desktop, so there are no stray
+    host Vite/uvicorn processes to reap and skipping is correct.
+
+---
+
 ## BUG-012: Centered bottom toolbar wrapped onto two rows despite fitting the viewport
 
 - **Symptoms**

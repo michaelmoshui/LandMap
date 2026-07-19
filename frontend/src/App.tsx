@@ -18,6 +18,9 @@ export default function App() {
   const [active, setActive] = useState<Set<string>>(new Set());
   const [selections, setSelections] = useState<SelectedBoundary[]>([]);
   const [status, setStatus] = useState<string>("Loading layers...");
+  // The search panel defaults to collapsed (just the icon); selecting a
+  // boundary on the map opens it so the selection is visible.
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     fetchRegions()
@@ -50,6 +53,18 @@ export default function App() {
     });
   };
 
+  // Select-all / deselect-all for a category.
+  const toggleGroup = (layerIds: string[], shouldActivate: boolean) => {
+    setActive((prev) => {
+      const next = new Set(prev);
+      for (const id of layerIds) {
+        if (shouldActivate) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
+
   const region = regions.find((r) => r.id === regionId) ?? null;
 
   const selectBoundary = (boundary: BoundarySummary) => {
@@ -58,6 +73,8 @@ export default function App() {
       const color = nextSelectionColor(prev.map((s) => s.color));
       return [...prev, { ...boundary, color }];
     });
+    // Reveal the selection under the search bar, expanding it if collapsed.
+    setSearchOpen(true);
     // Selecting a municipality/neighborhood shows its boundary layer so the
     // focus (dim) effect is visible.
     const boundaryLayerId = BOUNDARY_LAYER_BY_KIND[boundary.kind];
@@ -89,13 +106,20 @@ export default function App() {
         layers={layers}
         active={active}
         onToggle={toggle}
+        onToggleGroup={toggleGroup}
         regions={regions}
         regionId={regionId}
         onRegionChange={setRegionId}
         sources={sources}
         status={status}
       />
-      <SearchPanel selections={selections} onSelect={selectBoundary} onRemove={removeBoundary} />
+      <SearchPanel
+        selections={selections}
+        onSelect={selectBoundary}
+        onRemove={removeBoundary}
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+      />
     </div>
   );
 }

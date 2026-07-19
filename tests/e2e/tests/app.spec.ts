@@ -146,6 +146,42 @@ test.describe("LandMap end-to-end", () => {
     }
   });
 
+  test("the demographics layer is presented as City Info under Boundaries", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Boundaries" }).click();
+    await expect(page.getByText("City Info", { exact: true })).toBeVisible();
+    // It no longer lives under a People category.
+    await expect(page.getByRole("button", { name: "People" })).toHaveCount(0);
+  });
+
+  test("Select all toggles every layer in a category", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Boundaries" }).click();
+    const selectAll = page.getByRole("checkbox", { name: "Select all" });
+    await selectAll.check();
+    // All layer checkboxes in the group become checked.
+    const boxes = page.locator(".toolbar-flyout .layer-item:not(.select-all) input[type=checkbox]");
+    const count = await boxes.count();
+    for (let i = 0; i < count; i += 1) {
+      await expect(boxes.nth(i)).toBeChecked();
+    }
+    await selectAll.uncheck();
+    for (let i = 0; i < count; i += 1) {
+      await expect(boxes.nth(i)).not.toBeChecked();
+    }
+  });
+
+  test("toggling Road Construction loads its (cluster-coloured) features", async ({ page }) => {
+    const featuresRequest = page.waitForRequest((req) =>
+      req.url().includes("/api/layers/road-construction/features"),
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: "Roads" }).click();
+    await page.getByText("Road Construction", { exact: true }).click();
+    const req = await featuresRequest;
+    expect(req.url()).toContain("/api/layers/road-construction/features");
+  });
+
   test("switching to Toronto shows GTA layers", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Transit" }).click();
