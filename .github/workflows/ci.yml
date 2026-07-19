@@ -15,11 +15,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Build Test Images
-        run: |
-          docker compose -f docker-compose.test.yml build
-
       - name: Lint codebase
         run: make lint
 
