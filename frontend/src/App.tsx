@@ -53,6 +53,18 @@ export default function App() {
     });
   };
 
+  // Select-all / deselect-all for a category.
+  const toggleGroup = (layerIds: string[], shouldActivate: boolean) => {
+    setActive((prev) => {
+      const next = new Set(prev);
+      for (const id of layerIds) {
+        if (shouldActivate) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
+
   const region = regions.find((r) => r.id === regionId) ?? null;
 
   const selectBoundary = (boundary: BoundarySummary) => {
@@ -94,6 +106,7 @@ export default function App() {
         layers={layers}
         active={active}
         onToggle={toggle}
+        onToggleGroup={toggleGroup}
         regions={regions}
         regionId={regionId}
         onRegionChange={setRegionId}

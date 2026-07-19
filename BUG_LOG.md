@@ -42,6 +42,29 @@ Each entry records:
 
 ---
 
+## BUG-014: Data-sources flyout vanished when its horizontal scrollbar was clicked
+
+- **Symptoms**
+  - Opening the "Sources" flyout on the right of the bottom toolbar pushed content
+    past the right edge of the page, adding a horizontal scrollbar. Clicking that
+    scrollbar to reveal the rightmost sources instantly closed the flyout, so the
+    cut-off entries could never be read.
+- **Root cause**
+  - The flyout was always centered (`left: 50%; translateX(-50%)`). For a button
+    near the right edge, the centered panel overflowed the viewport, creating a
+    page-level horizontal scrollbar. That scrollbar lives on the document, i.e.
+    *outside* the toolbar element, so clicking it fired the flyout's
+    outside-`pointerdown` handler and dismissed it.
+- **Fix**
+  - Anchor each flyout to its button based on the button's on-screen position
+    (`flyoutAlignment` in `BottomBar.tsx`): right-edge buttons open right-aligned,
+    left-edge buttons left-aligned, middle buttons stay centered. Also gave the
+    flyout a `max-height`/`overflow-y: auto` and set `.app { overflow: hidden }`
+    so an off-screen panel can never spawn a page scrollbar again. Covered by
+    `flyoutAlignment` unit tests.
+
+---
+
 ## BUG-013: `make dev` fails on Windows with "The system cannot find the path specified." (Error 255)
 
 - **Symptoms**

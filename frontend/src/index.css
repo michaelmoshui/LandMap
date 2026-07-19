@@ -24,6 +24,7 @@ body,
   position: relative;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
 }
 
 .map {
@@ -190,15 +191,68 @@ body,
 .toolbar-flyout {
   position: absolute;
   bottom: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
   min-width: 230px;
   max-width: min(300px, calc(100vw - 16px));
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
   padding: 10px;
   background: rgba(15, 23, 42, 0.95);
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 12px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.4);
+}
+
+/* Thin scrollbar that blends into the dark flyout, with no stepper arrows. */
+.toolbar-flyout {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.toolbar-flyout::-webkit-scrollbar {
+  width: 6px;
+}
+
+.toolbar-flyout::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.toolbar-flyout::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+  border-radius: 999px;
+}
+
+.toolbar-flyout::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.75);
+}
+
+/* Drop the up/down stepper buttons at the ends of the scrollbar. */
+.toolbar-flyout::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Anchor the flyout so it never runs off the page edge (see flyoutAlignment). */
+.flyout-align-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.flyout-align-right {
+  right: 0;
+  left: auto;
+}
+
+.flyout-align-left {
+  left: 0;
+  right: auto;
+}
+
+.layer-item.select-all {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  font-weight: 600;
 }
 
 .flyout-title {
