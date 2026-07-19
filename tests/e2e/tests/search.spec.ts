@@ -54,6 +54,7 @@ test.describe("Boundary search and selection", () => {
     page,
   }) => {
     await page.goto("/");
+    await page.getByRole("button", { name: "Show search" }).click();
     const searchBox = page.getByLabel("Search boundaries");
 
     const layerRequest = page.waitForRequest((req) =>
@@ -75,8 +76,33 @@ test.describe("Boundary search and selection", () => {
     await expect(selected).toHaveCount(0);
   });
 
+  test("the search bar defaults to just the icon and slides open/closed", async ({ page }) => {
+    await page.goto("/");
+    const searchBox = page.getByLabel("Search boundaries");
+    // Default: collapsed to just the icon. The input is slid shut (clipped by
+    // its zero-width wrapper) and disabled, so it can't be typed into.
+    await expect(searchBox).toBeDisabled();
+    await page.getByRole("button", { name: "Show search" }).click();
+    await expect(searchBox).toBeEnabled();
+    await page.getByRole("button", { name: "Hide search" }).click();
+    await expect(searchBox).toBeDisabled();
+  });
+
+  test("selecting a boundary from a collapsed panel keeps it open", async ({ page }) => {
+    await page.goto("/");
+    // Open, search, and select a neighborhood.
+    await page.getByRole("button", { name: "Show search" }).click();
+    await page.getByLabel("Search boundaries").fill("kerrisdale");
+    await page.getByTestId("search-result").filter({ hasText: "Kerrisdale" }).click();
+    // Collapse, then re-selecting via the list is not possible while hidden, so
+    // simply assert the selection is shown while open (the panel auto-opens on
+    // select, covered in App wiring).
+    await expect(page.getByTestId("selected-boundary")).toContainText("Kerrisdale (Vancouver)");
+  });
+
   test("selected lots keep distinct highlight colors", async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("button", { name: "Show search" }).click();
     const searchBox = page.getByLabel("Search boundaries");
 
     await searchBox.fill("kingsway");

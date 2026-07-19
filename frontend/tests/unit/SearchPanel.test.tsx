@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BoundarySummary } from "../../src/api/types";
@@ -20,6 +21,20 @@ const KITSILANO: BoundarySummary = {
 
 const SELECTED: SelectedBoundary = { ...KITSILANO, color: "#e6194b" };
 
+// Most tests render the panel already open; a couple exercise the toggle.
+function renderPanel(props: Partial<ComponentProps<typeof SearchPanel>> = {}) {
+  return render(
+    <SearchPanel
+      selections={[]}
+      onSelect={() => {}}
+      onRemove={() => {}}
+      open
+      onOpenChange={() => {}}
+      {...props}
+    />,
+  );
+}
+
 afterEach(() => {
   vi.clearAllMocks();
 });
@@ -27,7 +42,7 @@ afterEach(() => {
 describe("SearchPanel", () => {
   it("searches as the user types and lists results with kind badges", async () => {
     vi.mocked(searchBoundaries).mockResolvedValue([KITSILANO]);
-    render(<SearchPanel selections={[]} onSelect={() => {}} onRemove={() => {}} />);
+    renderPanel();
 
     await userEvent.type(screen.getByLabelText("Search boundaries"), "kits");
     expect(await screen.findByText("Kitsilano")).toBeInTheDocument();
@@ -38,7 +53,7 @@ describe("SearchPanel", () => {
   it("calls onSelect with the clicked result", async () => {
     vi.mocked(searchBoundaries).mockResolvedValue([KITSILANO]);
     const onSelect = vi.fn();
-    render(<SearchPanel selections={[]} onSelect={onSelect} onRemove={() => {}} />);
+    renderPanel({ onSelect });
 
     await userEvent.type(screen.getByLabelText("Search boundaries"), "kits");
     await userEvent.click(await screen.findByText("Kitsilano"));
@@ -47,7 +62,7 @@ describe("SearchPanel", () => {
 
   it("disables results that are already selected", async () => {
     vi.mocked(searchBoundaries).mockResolvedValue([KITSILANO]);
-    render(<SearchPanel selections={[SELECTED]} onSelect={() => {}} onRemove={() => {}} />);
+    renderPanel({ selections: [SELECTED] });
 
     await userEvent.type(screen.getByLabelText("Search boundaries"), "kits");
     expect(await screen.findByTestId("search-result")).toBeDisabled();
@@ -55,7 +70,7 @@ describe("SearchPanel", () => {
 
   it("lists selections and removes on demand", async () => {
     const onRemove = vi.fn();
-    render(<SearchPanel selections={[SELECTED]} onSelect={() => {}} onRemove={onRemove} />);
+    renderPanel({ selections: [SELECTED], onRemove });
 
     const item = screen.getByTestId("selected-boundary");
     expect(item).toHaveTextContent("Kitsilano");
@@ -71,7 +86,7 @@ describe("SearchPanel", () => {
       kind: "lot",
       color: "#3cb44b",
     };
-    render(<SearchPanel selections={[SELECTED, lot]} onSelect={() => {}} onRemove={() => {}} />);
+    renderPanel({ selections: [SELECTED, lot] });
 
     const items = screen.getAllByTestId("selected-boundary");
     expect(items[0].querySelector(".swatch")).toBeNull();
@@ -81,9 +96,42 @@ describe("SearchPanel", () => {
 
   it("shows an empty state when nothing matches", async () => {
     vi.mocked(searchBoundaries).mockResolvedValue([]);
-    render(<SearchPanel selections={[]} onSelect={() => {}} onRemove={() => {}} />);
+    renderPanel();
 
     await userEvent.type(screen.getByLabelText("Search boundaries"), "zzz");
     expect(await screen.findByText("No matches")).toBeInTheDocument();
+  });
+
+  it("toggles open/collapsed via the always-visible search icon", async () => {
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <SearchPanel
+        selections={[]}
+        onSelect={() => {}}
+        onRemove={() => {}}
+        open={false}
+        onOpenChange={onOpenChange}
+      />,
+    );
+
+    // Collapsed: the input is disabled and out of the tab order; clicking the
+    // icon asks to open.
+    expect(screen.getByLabelText("Search boundaries")).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Show search" }));
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+
+    // Open: the input is enabled and the icon now hides the panel.
+    rerender(
+      <SearchPanel
+        selections={[]}
+        onSelect={() => {}}
+        onRemove={() => {}}
+        open
+        onOpenChange={onOpenChange}
+      />,
+    );
+    expect(screen.getByLabelText("Search boundaries")).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "Hide search" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });
