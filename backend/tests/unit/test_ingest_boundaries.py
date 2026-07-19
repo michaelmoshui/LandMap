@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+from shapely.geometry import Point, shape
+
 from app.ingest.boundaries import (
     BURNABY_EXCLUDE_KEYWORDS,
     merge_geometries,
@@ -84,6 +87,50 @@ def test_municipality_features_merge_rows_by_name() -> None:
         "kind": "municipality",
     }
     assert features[0]["geometry"]["type"] == "MultiPolygon"
+
+
+def _rect_geometry(minx: float, miny: float, maxx: float, maxy: float) -> dict[str, object]:
+    return {
+        "type": "Polygon",
+        "coordinates": [
+            [[minx, miny], [maxx, miny], [maxx, maxy], [minx, maxy], [minx, miny]]
+        ],
+    }
+
+
+def test_municipality_features_excludes_electoral_area_a() -> None:
+    raw = {
+        "features": [
+            {"properties": {"ShortName": "Electoral Area A"}, "geometry": _square_geometry(0.0)},
+            {"properties": {"ShortName": "Vancouver"}, "geometry": _square_geometry(1.0)},
+        ]
+    }
+    names = [f["properties"]["name"] for f in municipality_features(raw)]
+    assert names == ["Vancouver"]
+
+
+def test_municipality_features_carves_first_nation_out_of_overlapping_city() -> None:
+    # A First Nation whose treaty lands sit inside a municipality (as Tsawwassen
+    # does inside Delta) must be subtracted from that municipality: both stay
+    # selectable, but they no longer both claim the same area.
+    raw = {
+        "features": [
+            {"properties": {"ShortName": "Delta"}, "geometry": _rect_geometry(0.0, 0.0, 2.0, 2.0)},
+            {
+                "properties": {"ShortName": "Tsawwassen First Nation"},
+                "geometry": _rect_geometry(0.0, 0.0, 1.0, 1.0),
+            },
+        ]
+    }
+    features = {f["properties"]["name"]: f for f in municipality_features(raw)}
+    assert set(features) == {"Delta", "Tsawwassen First Nation"}
+
+    delta = shape(features["Delta"]["geometry"])
+    tfn = shape(features["Tsawwassen First Nation"]["geometry"])
+    assert delta.intersection(tfn).area == pytest.approx(0.0, abs=1e-6)
+    # The overlap corner now belongs only to the First Nation.
+    assert tfn.contains(Point(0.5, 0.5))
+    assert not delta.contains(Point(0.5, 0.5))
 
 
 def test_neighborhood_features_are_namespaced_by_municipality() -> None:

@@ -25,6 +25,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from shapely import make_valid, set_precision
+from shapely.geometry import mapping, shape
+from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
+
 MUNICIPALITIES_URL = (
     "https://services6.arcgis.com/56eqCzQ5SZhBaDST/arcgis/rest/services/"
     "Administrative_Boundaries/FeatureServer/10/query"
@@ -143,20 +148,117 @@ def _feature(id: str, name: str, kind: str, geometry: dict[str, Any]) -> dict[st
     }
 
 
+# Metro Vancouver's "Administrative Boundaries" layer includes non-municipal
+# rows. "Electoral Area A" is an unincorporated electoral area (UBC endowment
+# lands plus scattered remote parcels), not a city, and one of its parts spans
+# the whole region - drop it so only real municipalities remain.
+EXCLUDED_MUNICIPALITIES = frozenset({"Electoral Area A"})
+
+
+def _round_coords(node: Any) -> Any:
+    """Recursively round a GeoJSON coordinate tree to COORD_DECIMALS."""
+    if isinstance(node, list | tuple):
+        if node and isinstance(node[0], int | float):
+            return [round(float(c), COORD_DECIMALS) for c in node]
+        return [_round_coords(child) for child in node]
+    return node
+
+
+def _polygonal(geometry: BaseGeometry) -> BaseGeometry | None:
+    """Keep only the (Multi)Polygon parts of a geometry, or None if none remain.
+
+    ``difference``/``make_valid`` can return lines, points, or a mixed
+    GeometryCollection; only the areal parts are meaningful for a boundary.
+    """
+    if geometry.is_empty:
+        return None
+    if geometry.geom_type in ("Polygon", "MultiPolygon"):
+        return geometry
+    if geometry.geom_type == "GeometryCollection":
+        parts = [g for g in geometry.geoms if g.geom_type in ("Polygon", "MultiPolygon")]
+        return unary_union(parts) if parts else None
+    return None
+
+
+def _clean_union(geometries: list[dict[str, Any]]) -> BaseGeometry | None:
+    """Merge raw GeoJSON geometries into one valid, polygonal shapely geometry."""
+    shapes: list[BaseGeometry] = []
+    for geometry in geometries:
+        if not geometry:
+            continue
+        polygonal = _polygonal(make_valid(shape(geometry)))
+        if polygonal is not None:
+            shapes.append(polygonal)
+    if not shapes:
+        return None
+    return _polygonal(make_valid(unary_union(shapes)))
+
+
+def _to_geojson(geometry: BaseGeometry | None) -> dict[str, Any] | None:
+    """Simplify (topology-preserving), round, and emit a GeoJSON geometry dict.
+
+    Using shapely for the whole municipality pipeline (union/difference/
+    simplify) avoids the self-intersections and slivers the naive per-ring
+    Douglas-Peucker path produced - those rendered as stray grey wedges in the
+    focus (dim) mask (see BUG_LOG.md).
+    """
+    geometry = _polygonal(geometry) if geometry is not None else None
+    if geometry is None or geometry.is_empty:
+        return None
+    simplified = _polygonal(make_valid(geometry.simplify(SIMPLIFY_TOLERANCE_DEG)))
+    if simplified is None or simplified.is_empty:
+        return None
+    # Snap to the output coordinate grid with shapely (not naive rounding):
+    # rounding coordinates after the fact can fold a boundary back on itself and
+    # produce an invalid, self-intersecting polygon, which is what rendered as a
+    # stray grey wedge in the focus mask. set_precision keeps the result valid.
+    snapped = _polygonal(make_valid(set_precision(simplified, 10**-COORD_DECIMALS)))
+    if snapped is None or snapped.is_empty:
+        return None
+    geojson = mapping(snapped)
+    return {"type": geojson["type"], "coordinates": _round_coords(geojson["coordinates"])}
+
+
 def municipality_features(raw: dict[str, Any]) -> list[dict[str, Any]]:
-    """Metro Vancouver rows -> one feature per municipality (rows merged by name)."""
+    """Metro Vancouver rows -> one feature per municipality (rows merged by name).
+
+    Non-municipal rows (see ``EXCLUDED_MUNICIPALITIES``) are dropped, and where
+    a First Nation's treaty lands overlap a municipality in the source data
+    (Tsawwassen First Nation sits inside Delta's polygon), the overlap is
+    subtracted from the municipality so every point maps to exactly one
+    boundary while both stay selectable.
+    """
     by_name: dict[str, list[dict[str, Any]]] = {}
     for feature in raw["features"]:
         props = feature["properties"]
         name = (props.get("ShortName") or props.get("FullName") or "").strip()
-        if not name or feature.get("geometry") is None:
+        if not name or name in EXCLUDED_MUNICIPALITIES or feature.get("geometry") is None:
             continue
         by_name.setdefault(name, []).append(feature["geometry"])
+
+    shapes: dict[str, BaseGeometry] = {}
+    for name, geometries in by_name.items():
+        merged = _clean_union(geometries)
+        if merged is not None and not merged.is_empty:
+            shapes[name] = merged
+
+    # Carve any First Nation treaty lands out of the municipalities they overlap
+    # so the two never both claim the same area.
+    first_nations = [name for name in shapes if "First Nation" in name]
+    for fn_name in first_nations:
+        fn_geometry = shapes[fn_name]
+        for name, geometry in shapes.items():
+            if name == fn_name or not geometry.intersects(fn_geometry):
+                continue
+            remainder = _polygonal(make_valid(geometry.difference(fn_geometry)))
+            if remainder is not None and not remainder.is_empty:
+                shapes[name] = remainder
+
     results = []
-    for name, geometries in sorted(by_name.items()):
-        merged = simplify_geometry(merge_geometries(geometries), SIMPLIFY_TOLERANCE_DEG)
-        if merged:
-            results.append(_feature(f"muni-{slugify(name)}", name, "municipality", merged))
+    for name in sorted(shapes):
+        geometry = _to_geojson(shapes[name])
+        if geometry:
+            results.append(_feature(f"muni-{slugify(name)}", name, "municipality", geometry))
     return results
 
 

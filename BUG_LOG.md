@@ -10,6 +10,38 @@ Each entry records:
 
 ---
 
+## BUG-015: Boundary bugs from the raw Metro Vancouver municipality dataset (grey wedge on Delta, Delta/Tsawwassen overlap, "Electoral Area A")
+
+- **Symptoms**
+  - Selecting **Delta** in Municipality Boundaries drew a stray grey diagonal
+    wedge across the map (a mask artifact), not just Delta's focus outline.
+  - Clicking Delta's small NW piece lit up both it and the larger adjacent area
+    as "Delta", yet clicking that larger area selected "Tsawwassen First Nation":
+    the two boundaries claimed the same ground.
+  - "Electoral Area A" showed up as a selectable "municipality" though it is an
+    unincorporated electoral area, not a city.
+- **Root cause**
+  - The municipality ingest built geometry with a naive per-ring Douglas-Peucker
+    simplify and then rounded coordinates *after the fact*. That folded some
+    boundaries back on themselves into **invalid, self-intersecting polygons**;
+    when such a shape was cut out of the focus dim-mask (world-minus-selection),
+    the bad winding rendered as a doubly-filled grey wedge.
+  - Metro Vancouver's "Administrative Boundaries" layer includes non-municipal
+    rows, and its **Delta polygon overlaps the Tsawwassen First Nation treaty
+    lands** (TFN is drawn on top), so both features covered the same area.
+- **Fix**
+  - Rewrote municipality handling in `app/ingest/boundaries.py` to use **shapely**
+    (added as an ingest-only dev dependency; the runtime API never imports it):
+    union rows with `make_valid`, drop `EXCLUDED_MUNICIPALITIES`
+    (`Electoral Area A`), **subtract any First Nation's lands from the
+    municipalities they overlap** (Delta − TFN, both kept selectable), then
+    topology-preserving `simplify` + `set_precision` snap to the 1e-5 grid so the
+    output stays valid (no post-hoc rounding). Re-ran `make ingest-boundaries`.
+  - Covered by new tests in `backend/tests/unit/test_ingest_boundaries.py`
+    (Electoral Area A excluded; First Nation carved out of the overlapping city).
+
+---
+
 ## BUG-013: `make dev` fails on Windows with "The system cannot find the path specified." (Error 255)
 
 - **Symptoms**
